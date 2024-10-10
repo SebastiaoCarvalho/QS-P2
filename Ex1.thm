@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<alloy>
+
+<view>
+
+<defaultnode/>
+
+<defaultedge/>
+
+<node>
+   <type name="Int"/>
+   <type name="Msg"/>
+   <type name="Node"/>
+   <type name="PendingMsg"/>
+   <type name="SendingMsg"/>
+   <type name="SentMsg"/>
+   <type name="String"/>
+   <type name="univ"/>
+   <type name="seq/Int"/>
+   <set name="this/Leader" type="Node"/>
+   <set name="this/LQueue" type="Node"/>
+   <set name="this/Member" type="Node"/>
+</node>
+
+<edge visible="no" attribute="yes">
+   <relation name="lnxt"> <type name="Node"/> <type name="Node"/> <type name="Node"/> </relation>
+</edge>
+
+<edge visible="yes" attribute="no">
+   <relation name="visualizeQueue"> <type name="Node"/> <type name="Node"/> </relation>
+</edge>
+
+</view>
+
+</alloy>
