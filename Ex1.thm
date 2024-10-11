@@ -17,17 +17,24 @@
    <type name="String"/>
    <type name="univ"/>
    <type name="seq/Int"/>
-   <set name="this/Leader" type="Node"/>
    <set name="this/LQueue" type="Node"/>
+</node>
+
+<node showlabel="no" color="Blue">
    <set name="this/Member" type="Node"/>
 </node>
 
-<edge visible="no" attribute="yes">
-   <relation name="lnxt"> <type name="Node"/> <type name="Node"/> <type name="Node"/> </relation>
-</edge>
+<node showlabel="no" color="Green">
+   <set name="this/Leader" type="Node"/>
+</node>
 
-<edge visible="yes" attribute="no">
-   <relation name="visualizeQueue"> <type name="Node"/> <type name="Node"/> </relation>
+<edge visible="no">
+   <relation name="$visualizeLeader"> <type name="Node"/> <type name="Node"/> </relation>
+   <relation name="lnxt"> <type name="Node"/> <type name="Node"/> <type name="Node"/> </relation>
+   <relation name="outbox"> <type name="Node"/> <type name="Msg"/> </relation>
+   <relation name="qnxt"> <type name="Node"/> <type name="Node"/> <type name="Node"/> </relation>
+   <relation name="rcvrs"> <type name="Msg"/> <type name="Node"/> </relation>
+   <relation name="sndr"> <type name="Msg"/> <type name="Node"/> </relation>
 </edge>
 
 </view>
