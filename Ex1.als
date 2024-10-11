@@ -58,4 +58,25 @@ fact {
     all m : Member | (some m.(Leader.lnxt)) implies (Leader in m.(^(Leader.lnxt))) // all members can reach the leader
 }
 
-run {#Member=4 #Msg=0 #Node=7 #Member.qnxt=2 #LQueue=0 #Leader.lnxt=2} for 8
+// Pending message wasn't recieved by any node
+fact {
+    no PendingMsg.rcvrs
+}
+
+// Sending messages were received by some but not all
+fact {
+    all m : SendingMsg | 
+    (
+        some m.rcvrs // received by some
+        and m.rcvrs != Member // not received by all
+        and Leader in m.rcvrs // recieved by the leader
+        and no (m.rcvrs & (Node - Member)) // not received by non-members
+    )
+}
+
+// Sent messages were received by all
+fact {
+    all m : SentMsg | m.rcvrs = Member
+}
+
+run {#Member=4 #SentMsg=1 #SendingMsg=1 #PendingMsg=1 #Node=7 #Member.qnxt=2 #LQueue=0 #Leader.lnxt=2} for 10
