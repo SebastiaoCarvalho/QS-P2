@@ -30,18 +30,25 @@ fun visualizeLeader[] : Node -> lone Node {
 
 // members form a ring with each member pointing to another member (or itself)
 fact {
-    all m: Member | m.^nxt=Member
+    all m: Member | m.^nxt=Member // all members are reachable from each other
 }
 
 // each member queue consists of a (possibly empty) list of non-member nodes ending in the member in charge of that queue
 fact {
-    all m: Member | no (Member.(m.qnxt)) && (some (m.qnxt) implies one (m.qnxt).m) && (no ^(m.qnxt & iden))
+    all m: Member | 
+    (
+        no (Member.(m.qnxt)) // Non-members
+        && (some (m.qnxt) implies one (m.qnxt).m) // if list is not empty, it ends in the member
+        && (no (^(m.qnxt) & iden)) // no cycles
+    )
 }
 
 // non-member nodes are not allowed to queue in more than one member queue at a time
 fact {
-    all n: (Node - Member) | lone (n.(Member.qnxt))
+    all n: (Node - Member) | lone (n.(Member.qnxt)) // each non-member node is in at most one queue
+    all n: (Node - Member) | lone ((Member.qnxt).n) // each non-member is pointed to by at most one member
+    all m: Member | lone (Member.qnxt).m // each member is only pointed to by at most one non-member
 }
 
 
-run {#Member=5 #Msg=0 #Node=11 #Member.qnxt=5} for 11
+run {#Member=3 #Msg=0 #Node=8 #Member.qnxt=0 #LQueue=0} for 8
