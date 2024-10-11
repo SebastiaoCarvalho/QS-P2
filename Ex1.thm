@@ -11,13 +11,22 @@
    <type name="Int"/>
    <type name="Msg"/>
    <type name="Node"/>
-   <type name="PendingMsg"/>
-   <type name="SendingMsg"/>
-   <type name="SentMsg"/>
    <type name="String"/>
    <type name="univ"/>
    <type name="seq/Int"/>
    <set name="this/LQueue" type="Node"/>
+</node>
+
+<node color="Gray">
+   <type name="SendingMsg"/>
+</node>
+
+<node color="Red">
+   <type name="SentMsg"/>
+</node>
+
+<node color="White">
+   <type name="PendingMsg"/>
 </node>
 
 <node showlabel="no" color="Blue">
@@ -29,12 +38,15 @@
 </node>
 
 <edge visible="no">
-   <relation name="$visualizeLeader"> <type name="Node"/> <type name="Node"/> </relation>
    <relation name="lnxt"> <type name="Node"/> <type name="Node"/> <type name="Node"/> </relation>
    <relation name="outbox"> <type name="Node"/> <type name="Msg"/> </relation>
    <relation name="qnxt"> <type name="Node"/> <type name="Node"/> <type name="Node"/> </relation>
    <relation name="rcvrs"> <type name="Msg"/> <type name="Node"/> </relation>
    <relation name="sndr"> <type name="Msg"/> <type name="Node"/> </relation>
+</edge>
+
+<edge visible="yes">
+   <relation name="$visualizeLeader"> <type name="Node"/> <type name="Node"/> </relation>
 </edge>
 
 </view>

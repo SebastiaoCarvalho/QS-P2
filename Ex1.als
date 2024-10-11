@@ -39,6 +39,7 @@ fact {
     (
         no (Member.(m.qnxt)) // Non-members
         && (some (m.qnxt) implies one (m.qnxt).m) // if list is not empty, it ends in the member
+        && (all n : Node - Member | (some n.(m.qnxt)) implies (m in n.(^(m.qnxt)))) // all non-members can reach the member
         && (no (^(m.qnxt) & iden)) // no cycles
     )
 }
@@ -79,4 +80,5 @@ fact {
     all m : SentMsg | m.rcvrs = Member
 }
 
-run {#Member=4 #SentMsg=1 #SendingMsg=1 #PendingMsg=1 #Node=7 #Member.qnxt=2 #LQueue=0 #Leader.lnxt=2} for 10
+//run {#Member=4 #SentMsg=1 #SendingMsg=1 #PendingMsg=1 #Node=7 #Member.qnxt=2 #LQueue=0 #Leader.lnxt=2} for 10
+run {#Node>=5 (some Leader.lnxt) #(Member.qnxt.Member)>=2 #SendingMsg>=1 #SentMsg>=1 #PendingMsg>=1} for 7
