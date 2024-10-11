@@ -51,4 +51,11 @@ fact {
 }
 
 
-run {#Member=3 #Msg=0 #Node=8 #Member.qnxt=0 #LQueue=0} for 8
+// the leader queue consists of a list of member nodes ending in the leader
+fact {
+    no (Node - Member).(Leader.lnxt) // only members are in the leader queueLQueue
+    some (Leader.lnxt) implies (one (Leader.lnxt).Leader and no Leader.(Leader.lnxt)) // the leader queue ends in the leader
+    all m : Member | (some m.(Leader.lnxt)) implies (Leader in m.(^(Leader.lnxt))) // all members can reach the leader
+}
+
+run {#Member=4 #Msg=0 #Node=7 #Member.qnxt=2 #LQueue=0 #Leader.lnxt=2} for 8
