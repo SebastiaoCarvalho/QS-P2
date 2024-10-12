@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<alloy>
+
+<view>
+
+<defaultnode/>
+
+<defaultedge/>
+
+<node>
+   <type name="Int"/>
+   <type name="String"/>
+   <type name="univ"/>
+   <type name="Ex1/Msg"/>
+   <type name="Ex1/SendingMsg"/>
+   <type name="Ex1/SentMsg"/>
+   <type name="seq/Int"/>
+   <set name="Ex1/LQueue" type="Ex1/Node"/>
+</node>
+
+<node color="White">
+   <type name="Ex1/PendingMsg"/>
+</node>
+
+<node label="Node">
+   <type name="Ex1/Node"/>
+</node>
+
+<node showlabel="no" color="Blue">
+   <set name="Ex1/Member" type="Ex1/Node"/>
+</node>
+
+<node showlabel="no" color="Green">
+   <set name="Ex1/Leader" type="Ex1/Node"/>
+</node>
+
+</view>
+
+</alloy>
