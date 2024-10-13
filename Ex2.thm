@@ -34,6 +34,11 @@
    <set name="Ex1/Leader" type="Ex1/Node"/>
 </node>
 
+<edge visible="no">
+   <relation name="lnxt"> <type name="Ex1/Node"/> <type name="Ex1/Node"/> <type name="Ex1/Node"/> </relation>
+   <relation name="qnxt"> <type name="Ex1/Node"/> <type name="Ex1/Node"/> <type name="Ex1/Node"/> </relation>
+</edge>
+
 </view>
 
 </alloy>
