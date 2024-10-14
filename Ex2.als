@@ -136,13 +136,34 @@ pred leaderApplication[m : Member] {
     m not in (Leader.lnxt).Member
 
     // Post-Conditions
-    no Leader.lnxt implies Leader.lnxt' = (m -> Leader)
+    no Leader.lnxt implies lnxt' = (Leader -> m -> Leader)
     (some Leader.lnxt implies 
-        one m1 : Node - Member | (m1 in (Leader.lnxt).Member and m1 not in Member.(Leader.lnxt)) // n1 is the last node
+        one m1 : Member - Leader | (m1 in (Leader.lnxt).Member and m1 not in Member.(Leader.lnxt))
         and
-        (Leader.lnxt' = Leader.lnxt + (m -> m1)) // now n is the last node and points to n1
+        (lnxt' = lnxt + (Leader -> m -> m1)) 
     )
     LQueue' = LQueue + m
+
+    // Frame Conditions
+    Leader' = Leader
+    Member' = Member
+    nxt' = nxt
+    qnxt' = qnxt
+    outbox' = outbox
+    rcvrs' = rcvrs
+}
+
+pred leaderPromotion[m : Member] {
+    // Pre-Conditions
+    some Leader.lnxt
+    m = (Leader.lnxt).Leader
+    no PendingMsg
+
+    // Post-Conditions
+    no Leader.lnxt'
+    m.lnxt' = Leader.lnxt - (m -> Leader)
+    LQueue' = LQueue - m // remove m from leader queue
+    Leader' = m
 
     // Frame Conditions
     Member' = Member
@@ -150,6 +171,10 @@ pred leaderApplication[m : Member] {
     qnxt' = qnxt
     outbox' = outbox
     rcvrs' = rcvrs
+}
+
+pred broadcastInitialisation {
+    
 }
 
 pred trans[] {
@@ -164,6 +189,8 @@ pred trans[] {
     (some n : Node | nonMemberExit[n])
     or
     (some m : Member | leaderApplication[m])
+    or
+    (some m : Member | leaderPromotion[m])
 }
 
 pred system[] {
@@ -184,4 +211,8 @@ pred queueExit {
     #qnxt' < #qnxt and #Member' = #Member
 }
 
-run {#Node=3 #Msg=0 (eventually #lnxt>0)} for 4 steps
+pred leaderPromotion {
+    #lnxt' < #lnxt and #lnxt=2 and #Member'=3 and Leader'!=Leader
+}
+
+run {#Node=3 #Msg=0 (eventually leaderPromotion)} for 10 steps

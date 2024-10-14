@@ -15,7 +15,6 @@
    <type name="Ex1/SendingMsg"/>
    <type name="Ex1/SentMsg"/>
    <type name="seq/Int"/>
-   <set name="Ex1/LQueue" type="Ex1/Node"/>
 </node>
 
 <node color="White">
@@ -24,6 +23,10 @@
 
 <node label="Node">
    <type name="Ex1/Node"/>
+</node>
+
+<node showlabel="no">
+   <set name="Ex1/LQueue" type="Ex1/Node"/>
 </node>
 
 <node showlabel="no" color="Blue">
