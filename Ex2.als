@@ -106,6 +106,31 @@ pred memberExit[m : Member] {
     //(all m1 : (Member - m - m.nxt - nxt.m) | m1.nxt' = m1.nxt) // all other members next pointers are unchanged
 }
 
+pred nonMemberExit[n : Node] {
+    some m : Member | nonMemberExitAux[n, m]
+}
+
+pred nonMemberExitAux[n : Node, m : Member] {
+    // Pre-Conditions
+    n in Node - Member
+    n in (m.qnxt).Node
+
+    // Post-Conditions
+    // Post-Conditions
+    m.qnxt' = m.qnxt - (n -> n.(m.qnxt)) // remove n from m's queue
+        - ((m.qnxt).n-> n) + ((m.qnxt).n -> n.(m.qnxt))
+
+    // Frame Conditions
+    Member' = Member
+    Leader' = Leader
+    LQueue' = LQueue
+    nxt' = nxt
+    outbox' = outbox
+    lnxt' = lnxt
+    rcvrs' = rcvrs
+    (all m1 : (Member - m) | m1.qnxt' = m1.qnxt) // all other members queues are unchanged
+}
+
 pred trans[] {
     stutter[]
     or
@@ -114,6 +139,8 @@ pred trans[] {
     (some n : Node | some m : Member | memberPrommotion[n, m])
     or
     (some m : Member | memberExit[m])
+    or
+    (some n : Node | nonMemberExit[n])
 }
 
 pred system[] {
