@@ -82,28 +82,27 @@ pred memberExit[m : Member] {
 
     // Post-Conditions
     Member' = Member - m
-    //nxt' = nxt - (m -> m.nxt) + (nxt.m -> m.nxt) // change node that pointed to m to point to what m pointed to
-    //m.nxt.qnxt' = m.nxt.qnxt + m.qnxt // append m's queue to the node that m pointed to
-    // m in (Leader.lnxt).Member implies (
-    //     Leader.lnxt' = Leader.lnxt 
-    //         -((Leader.lnxt).m -> m) // change node that pointed to m to point to what m pointed to
-    //         - (m -> m.(Leader.lnxt))
-    //         + ((Leader.lnxt).m -> m.(Leader.lnxt))
-    //     and
-    //     LQueue' = LQueue - m
-    // )
+    nxt' = nxt - (m -> m.nxt) - (nxt.m -> m) + (nxt.m -> m.nxt) // change node that pointed to m to point to what m pointed to
+    m.nxt.qnxt' = m.nxt.qnxt + m.qnxt // append m's queue to the node that m pointed to
+    m in (Leader.lnxt).Member implies (
+        Leader.lnxt' = Leader.lnxt 
+            -((Leader.lnxt).m -> m) // change node that pointed to m to point to what m pointed to
+            - (m -> m.(Leader.lnxt))
+            + ((Leader.lnxt).m -> m.(Leader.lnxt))
+        and
+        LQueue' = LQueue - m
+    )
 
     // Frame Conditions
     Leader' = Leader
     outbox' = outbox
     rcvrs' = rcvrs
-    // m not in (Leader.lnxt).Member implies (
-    //     lnxt' = lnxt
-    //     and
-    //     LQueue' = LQueue
-    // )
-    //(all m1 : (Member - m - m.nxt) | m1.qnxt' = m1.qnxt) // all other members queues are unchanged
-    //(all m1 : (Member - m - m.nxt - nxt.m) | m1.nxt' = m1.nxt) // all other members next pointers are unchanged
+    m not in (Leader.lnxt).Member implies (
+        lnxt' = lnxt
+        and
+        LQueue' = LQueue
+    )
+    (all m1 : (Member - m - m.nxt) | m1.qnxt' = m1.qnxt) // all other members queues are unchanged
 }
 
 pred nonMemberExit[n : Node] {
@@ -157,4 +156,8 @@ pred removal {
     #Member' < #Member
 }
 
-run {#Node=3 #Msg=0 eventually removal} for 4 steps
+pred queueExit {
+    #qnxt' < #qnxt and #Member' = #Member
+}
+
+run {#Node=3 #Msg=0 (eventually queueExit)} for 4 steps
