@@ -130,6 +130,28 @@ pred nonMemberExitAux[n : Node, m : Member] {
     (all m1 : (Member - m) | m1.qnxt' = m1.qnxt) // all other members queues are unchanged
 }
 
+pred leaderApplication[m : Member] {
+    // Pre-Conditions
+    m != Leader
+    m not in (Leader.lnxt).Member
+
+    // Post-Conditions
+    no Leader.lnxt implies Leader.lnxt' = (m -> Leader)
+    (some Leader.lnxt implies 
+        one m1 : Node - Member | (m1 in (Leader.lnxt).Member and m1 not in Member.(Leader.lnxt)) // n1 is the last node
+        and
+        (Leader.lnxt' = Leader.lnxt + (m -> m1)) // now n is the last node and points to n1
+    )
+    LQueue' = LQueue + m
+
+    // Frame Conditions
+    Member' = Member
+    nxt' = nxt
+    qnxt' = qnxt
+    outbox' = outbox
+    rcvrs' = rcvrs
+}
+
 pred trans[] {
     stutter[]
     or
@@ -140,6 +162,8 @@ pred trans[] {
     (some m : Member | memberExit[m])
     or
     (some n : Node | nonMemberExit[n])
+    or
+    (some m : Member | leaderApplication[m])
 }
 
 pred system[] {
@@ -160,4 +184,4 @@ pred queueExit {
     #qnxt' < #qnxt and #Member' = #Member
 }
 
-run {#Node=3 #Msg=0 (eventually queueExit)} for 4 steps
+run {#Node=3 #Msg=0 (eventually #lnxt>0)} for 4 steps
