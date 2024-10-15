@@ -11,18 +11,27 @@
    <type name="Int"/>
    <type name="String"/>
    <type name="univ"/>
-   <type name="Ex1/Msg"/>
-   <type name="Ex1/SendingMsg"/>
-   <type name="Ex1/SentMsg"/>
    <type name="seq/Int"/>
 </node>
 
-<node color="White">
+<node color="White" label="PendingMsg">
    <type name="Ex1/PendingMsg"/>
+</node>
+
+<node label="Msg">
+   <type name="Ex1/Msg"/>
 </node>
 
 <node label="Node">
    <type name="Ex1/Node"/>
+</node>
+
+<node label="SendingMsg">
+   <type name="Ex1/SendingMsg"/>
+</node>
+
+<node label="SentMsg">
+   <type name="Ex1/SentMsg"/>
 </node>
 
 <node showlabel="no">
@@ -35,6 +44,10 @@
 
 <node showlabel="no" color="Green">
    <set name="Ex1/Leader" type="Ex1/Node"/>
+</node>
+
+<node visible="yes" showlabel="no">
+   <set name="$msg" type="Ex1/Msg"/>
 </node>
 
 <edge visible="no">

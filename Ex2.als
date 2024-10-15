@@ -13,7 +13,11 @@ fun visualizeLeader[] : Node -> lone Node {
 pred init[] {
     Member = Leader
     Msg = PendingMsg
+    all m : Member | m.outbox = sndr.m
+    no LQueue
     no qnxt
+    no lnxt
+    no rcvrs
 }
 
 pred stutter[] {
@@ -157,7 +161,7 @@ pred leaderPromotion[m : Member] {
     // Pre-Conditions
     some Leader.lnxt
     m = (Leader.lnxt).Leader
-    no PendingMsg
+    no SendingMsg
 
     // Post-Conditions
     no Leader.lnxt'
@@ -173,9 +177,65 @@ pred leaderPromotion[m : Member] {
     rcvrs' = rcvrs
 }
 
-pred broadcastInitialisation {
-    
+pred broadcastInitialisation[msg : Msg] {
+    // Pre-Conditions
+
+    // message is pending
+    msg in PendingMsg
+    // only leader can start broadcast
+    msg.sndr = Leader 
+
+    // Post-Conditions
+    outbox' = outbox - (Leader -> msg) + (Leader.nxt -> msg)
+    //PendingMsg' = PendingMsg - msg
+    //SendingMsg' = SendingMsg + msg
+
+    // Frame Conditions
+    Member' = Member
+    Leader' = Leader
+    LQueue' = LQueue
+    nxt' = nxt
+    qnxt' = qnxt
+    lnxt' = lnxt
 }
+
+pred messageRedirect[msg : Msg, m : Member] {
+    // Pre-Conditions
+    msg in SendingMsg
+    msg in m.outbox
+
+    // Post-Conditions
+    outbox' = outbox - (m -> msg) + (m.nxt -> msg)
+    rcvrs' = rcvrs + (msg -> m)
+
+    // Frame Conditions
+    Member' = Member
+    Leader' = Leader
+    LQueue' = LQueue
+    nxt' = nxt
+    qnxt' = qnxt
+    lnxt' = lnxt
+}
+
+pred broadcastTermination[msg : Msg] {
+    // Pre-Conditions
+    msg in SendingMsg
+    msg in Leader.outbox
+
+    // Post-Conditions
+    rcvrs' = rcvrs + (msg -> Leader)
+    outbox' = outbox - (Leader -> msg)
+
+    // Frame Conditions
+    Member' = Member
+    Leader' = Leader
+    LQueue' = LQueue
+    nxt' = nxt
+    qnxt' = qnxt
+    lnxt' = lnxt
+    rcvrs' = rcvrs
+}
+
 
 pred trans[] {
     stutter[]
@@ -191,6 +251,9 @@ pred trans[] {
     (some m : Member | leaderApplication[m])
     or
     (some m : Member | leaderPromotion[m])
+    or
+    (some msg : Msg | broadcastInitialisation[msg])
+    
 }
 
 pred system[] {
@@ -203,16 +266,5 @@ fact {
     system[]
 }
 
-pred removal {
-    #Member' < #Member
-}
 
-pred queueExit {
-    #qnxt' < #qnxt and #Member' = #Member
-}
-
-pred leaderPromotion {
-    #lnxt' < #lnxt and #lnxt=2 and #Member'=3 and Leader'!=Leader
-}
-
-run {#Node=3 #Msg=0 (eventually leaderPromotion)} for 10 steps
+run {#Node=3 #Msg=1 and eventually (#Member=3 and some msg : Msg | broadcastInitialisation[msg])} for 10 steps
