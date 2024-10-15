@@ -33,17 +33,19 @@ pred stutter[] {
 
 pred memberApplication[n : Node, m: Member] {
     // Pre-Conditions
+
+    // n is not a member
     n not in Member
+    // n is not in any other member's queue
     n !in (Member.qnxt).Node
 
     // Post-Conditions
-    no m.qnxt implies m.qnxt' = (n -> m)
-    (some m.qnxt implies 
-        one n1 : Node - Member | (n1 in (m.qnxt).Node and n1 not in Node.(m.qnxt)) // n1 is the last node
-        and
-        (m.qnxt' = m.qnxt + (n -> n1)) // now n is the last node and points to n1
-    )
 
+    // add n to m's queue
+    addToEmptyQueue[n, m]
+    or
+    addToNonEmptyQueue[n, m]
+    
     // Frame Conditions
     Member' = Member
     Leader' = Leader
@@ -52,22 +54,68 @@ pred memberApplication[n : Node, m: Member] {
     outbox' = outbox
     lnxt' = lnxt
     rcvrs' = rcvrs
-    (all m1 : (Member - m) | m1.qnxt' = m1.qnxt) // all other members queues are unchanged
+    // all other members queues are unchanged
+    (all m1 : (Member - m) | m1.qnxt' = m1.qnxt)
+}
+
+pred addToEmptyQueue[n : Node, m : Member] {
+    // Pre-Conditions
+
+    // queue is empty
+    no m.qnxt
+
+    // Post-Conditions
+
+    // add n to m's queue
+    m.qnxt' = (n -> m) 
+}    
+
+pred addToNonEmptyQueue[n : Node, m : Member] {
+    // Pre-Condtions
+
+    // queue is not empty
+    some m.qnxt
+
+    // Post-Conditions
+
+    // add n to m's queue and point to last node
+    m.qnxt' = m.qnxt + (n -> lastNodeInQueue[m.qnxt])
+}
+
+fun firstNodeInQueue[m : Member] : Node {
+    (m.qnxt).m
+}
+
+fun lastNodeInQueue[queue : Node -> Node] : Node {
+    // last node is in domain but not in counter domain
+    queue.Node - Node.queue
 }
 
 pred memberPrommotion[n : Node, m : Member] {
     // Pre-Conditions
+
+    // m's queue is not empty
     some m.qnxt
-    n = (m.qnxt).m
+
+    // n is the first node in m's queue
+    n = firstNodeInQueue[m]
 
     // Post-Conditions
-    m.qnxt' = m.qnxt - (n -> m) // remove n from m's queue
-        - ((m.qnxt).n-> n) + ((m.qnxt).n -> m) // change node that pointed to first entry to point to m
 
+    // remove n from m's queue and 2nd node becomes first
+    m.qnxt' = m.qnxt - (n -> m) - (previousInQueue[n, m.qnxt]-> n) + (previousInQueue[n, m.qnxt] -> m)
+
+    // n becomes a member
     Member' = Member + n
+
+    // n's queue is empty
     no n.qnxt'
-    m.nxt' = n // m now points to n
-    n.nxt' = m.nxt // n now points to what m pointed to
+
+    // m now points to n
+    m.nxt' = n
+
+    // n now points to what m pointed to
+    n.nxt' = m.nxt
 
     // Frame Conditions
     Leader' = Leader
@@ -75,38 +123,69 @@ pred memberPrommotion[n : Node, m : Member] {
     outbox' = outbox
     lnxt' = lnxt
     rcvrs' = rcvrs
-    (all m1 : (Member - m) | m1.qnxt' = m1.qnxt) // all other members queues are unchanged
-    (all m1 : (Member - m) | m1.nxt' = m1.nxt) // all other members next pointers are unchanged
+    // all other members queues are unchanged
+    (all m1 : (Member - m) | m1.qnxt' = m1.qnxt)
+    // all other members next pointers are unchanged
+    (all m1 : (Member - m) | m1.nxt' = m1.nxt)
 
+}
+
+fun previousInQueue[n : Node, queue : Node -> lone Node] : Node {
+    queue.n
+}
+
+fun nextInQueue[n : Node, queue : Node -> lone Node] : Node {
+    n.queue
 }
 
 pred memberExit[m : Member] {
     // Pre-Conditions
+
+    // Leader cannot exit
     m != Leader
 
     // Post-Conditions
+
+    // remove m from Member
     Member' = Member - m
-    nxt' = nxt - (m -> m.nxt) - (nxt.m -> m) + (nxt.m -> m.nxt) // change node that pointed to m to point to what m pointed to
-    m.nxt.qnxt' = m.nxt.qnxt + m.qnxt // append m's queue to the node that m pointed to
-    m in (Leader.lnxt).Member implies (
-        Leader.lnxt' = Leader.lnxt 
-            -((Leader.lnxt).m -> m) // change node that pointed to m to point to what m pointed to
-            - (m -> m.(Leader.lnxt))
-            + ((Leader.lnxt).m -> m.(Leader.lnxt))
-        and
-        LQueue' = LQueue - m
-    )
+
+    // change node that pointed to m to point to what m pointed to
+    nxt' = nxt - (m -> m.nxt) - (nxt.m -> m) + (nxt.m -> m.nxt)
+
+    // append m's queue to the node that m pointed to
+    m.nxt.qnxt' = m.nxt.qnxt + m.qnxt
+    
+    // remove m from Leader queue if present
+    m in (Leader.lnxt).Member
+    implies
+    memberExitLeaderQueue[m]
 
     // Frame Conditions
     Leader' = Leader
     outbox' = outbox
     rcvrs' = rcvrs
-    m not in (Leader.lnxt).Member implies (
-        lnxt' = lnxt
-        and
-        LQueue' = LQueue
-    )
-    (all m1 : (Member - m - m.nxt) | m1.qnxt' = m1.qnxt) // all other members queues are unchanged
+    // if m not in Leader queue, Leader queue is unchanged
+    m not in (Leader.lnxt).Member implies (lnxt' = lnxt and LQueue' = LQueue)
+    // all other members queues are unchanged
+    (all m1 : (Member - m - m.nxt) | m1.qnxt' = m1.qnxt) 
+}
+
+fun previousInLeaderQueue[m : Member] : Member {
+    (Leader.lnxt).m
+}
+
+fun nextInLeaderQueue[m : Member] : Member {
+    m.(Leader.lnxt)
+}
+
+pred memberExitLeaderQueue[m : Member] {
+    // Remove m from Leader's queue, making member that pointed to m point to the member m pointed to
+    Leader.lnxt' = Leader.lnxt - (previousInLeaderQueue[m]-> m) 
+        - (m -> nextInLeaderQueue[m])
+        + (previousInLeaderQueue[m] -> nextInLeaderQueue[m])
+
+    // Remove m from LQueue
+    LQueue' = LQueue - m
 }
 
 pred nonMemberExit[n : Node] {
@@ -115,13 +194,14 @@ pred nonMemberExit[n : Node] {
 
 pred nonMemberExitAux[n : Node, m : Member] {
     // Pre-Conditions
+
+    // n is not a Member
     n in Node - Member
+    // n is in m's queue
     n in (m.qnxt).Node
 
     // Post-Conditions
-    // Post-Conditions
-    m.qnxt' = m.qnxt - (n -> n.(m.qnxt)) // remove n from m's queue
-        - ((m.qnxt).n-> n) + ((m.qnxt).n -> n.(m.qnxt))
+    m.qnxt' = m.qnxt - (n -> nextInQueue[n, m.qnxt]) - (previousInQueue[n, m.qnxt] -> n) + (previousInQueue[n, m.qnxt] -> nextInQueue[n, m.qnxt])
 
     // Frame Conditions
     Member' = Member
@@ -131,7 +211,8 @@ pred nonMemberExitAux[n : Node, m : Member] {
     outbox' = outbox
     lnxt' = lnxt
     rcvrs' = rcvrs
-    (all m1 : (Member - m) | m1.qnxt' = m1.qnxt) // all other members queues are unchanged
+    // all other members queues are unchanged
+    (all m1 : (Member - m) | m1.qnxt' = m1.qnxt) 
 }
 
 pred leaderApplication[m : Member] {
