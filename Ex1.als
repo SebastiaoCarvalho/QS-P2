@@ -59,6 +59,7 @@ fact {
     no (Node - Member).(Leader.lnxt) // only members are in the leader queueLQueue
     some (Leader.lnxt) implies (one (Leader.lnxt).Leader and no Leader.(Leader.lnxt)) // the leader queue ends in the leader
     all m : Member | (some m.(Leader.lnxt)) implies (Leader in m.(^(Leader.lnxt))) // all members can reach the leader
+    LQueue = (Leader.lnxt).Member // the leader queue is the leader's queue
 }
 
 // Pending message wasn't recieved by any node
