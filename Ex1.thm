@@ -14,7 +14,6 @@
    <type name="String"/>
    <type name="univ"/>
    <type name="seq/Int"/>
-   <set name="this/LQueue" type="Node"/>
 </node>
 
 <node color="Gray">
@@ -27,6 +26,10 @@
 
 <node color="White">
    <type name="PendingMsg"/>
+</node>
+
+<node showlabel="no">
+   <set name="LQueue" type="Node"/>
 </node>
 
 <node showlabel="no" color="Blue">

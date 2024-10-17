@@ -2,21 +2,21 @@ module Ex1
 
 sig Node {}
 
-var sig Member in Node {
-    var nxt: lone Member,
-    var qnxt : Node -> lone Node,
-    var outbox: set Msg
+ sig Member in Node {
+    nxt: lone Member,
+    qnxt : Node -> lone Node,
+    outbox: set Msg
 }
 
-var one sig Leader in Member {
-    var lnxt: Node -> lone Node
+one sig Leader in Member {
+    lnxt: Node -> lone Node
 }
 
-var sig LQueue in Member {}
+sig LQueue in Member {}
 
 abstract sig Msg {
     sndr: Node,
-    var rcvrs: set Node
+    rcvrs: set Node
 }
 
 sig SentMsg, SendingMsg, PendingMsg extends Msg {}

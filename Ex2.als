@@ -1,6 +1,25 @@
 module Ex2
 
-open Ex1
+sig Node {}
+
+var sig Member in Node {
+    var nxt: lone Member,
+    var qnxt : Node -> lone Node,
+    var outbox: set Msg
+}
+
+var one sig Leader in Member {
+    var lnxt: Node -> lone Node
+}
+
+var sig LQueue in Member {}
+
+sig Msg {
+    sndr: Node,
+    var rcvrs: set Node
+}
+
+var sig SentMsg, SendingMsg, PendingMsg in Msg {}
 
 fun visualizeQueue[] : Node -> lone Node {
     Member.qnxt
@@ -29,6 +48,13 @@ pred stutter[] {
     outbox' = outbox
     lnxt' = lnxt
     rcvrs' = rcvrs
+    messageStutter[]
+}
+
+pred messageStutter[] {
+    PendingMsg' = PendingMsg
+    SendingMsg' = SendingMsg
+    SentMsg' = SentMsg
 }
 
 pred memberApplication[n : Node, m: Member] {
@@ -56,6 +82,7 @@ pred memberApplication[n : Node, m: Member] {
     rcvrs' = rcvrs
     // all other members queues are unchanged
     (all m1 : (Member - m) | m1.qnxt' = m1.qnxt)
+    messageStutter[]
 }
 
 pred addToEmptyQueue[n : Node, m : Member] {
@@ -127,6 +154,7 @@ pred memberPrommotion[n : Node, m : Member] {
     (all m1 : (Member - m) | m1.qnxt' = m1.qnxt)
     // all other members next pointers are unchanged
     (all m1 : (Member - m) | m1.nxt' = m1.nxt)
+    messageStutter[]
 
 }
 
@@ -168,6 +196,7 @@ pred memberExit[m : Member] {
     m not in (Leader.lnxt).Member implies (lnxt' = lnxt and LQueue' = LQueue)
     // all other members queues are unchanged
     (all m1 : (Member - m - m.nxt) | m1.qnxt' = m1.qnxt) 
+    messageStutter[]
 }
 
 fun previousInLeaderQueue[m : Member] : Member {
@@ -213,6 +242,7 @@ pred nonMemberExitAux[n : Node, m : Member] {
     rcvrs' = rcvrs
     // all other members queues are unchanged
     (all m1 : (Member - m) | m1.qnxt' = m1.qnxt) 
+    messageStutter[]
 }
 
 pred leaderApplication[m : Member] {
@@ -236,6 +266,7 @@ pred leaderApplication[m : Member] {
     qnxt' = qnxt
     outbox' = outbox
     rcvrs' = rcvrs
+    messageStutter[]
 }
 
 pred leaderPromotion[m : Member] {
@@ -256,6 +287,7 @@ pred leaderPromotion[m : Member] {
     qnxt' = qnxt
     outbox' = outbox
     rcvrs' = rcvrs
+    messageStutter[]
 }
 
 pred broadcastInitialisation[msg : Msg] {
@@ -268,8 +300,8 @@ pred broadcastInitialisation[msg : Msg] {
 
     // Post-Conditions
     outbox' = outbox - (Leader -> msg) + (Leader.nxt -> msg)
-    //PendingMsg' = PendingMsg - msg
-    //SendingMsg' = SendingMsg + msg
+    PendingMsg' = PendingMsg - msg
+    SendingMsg' = SendingMsg + msg
 
     // Frame Conditions
     Member' = Member
@@ -278,6 +310,8 @@ pred broadcastInitialisation[msg : Msg] {
     nxt' = nxt
     qnxt' = qnxt
     lnxt' = lnxt
+    SentMsg' = SentMsg
+
 }
 
 pred messageRedirect[msg : Msg, m : Member] {
@@ -296,6 +330,7 @@ pred messageRedirect[msg : Msg, m : Member] {
     nxt' = nxt
     qnxt' = qnxt
     lnxt' = lnxt
+    messageStutter[]
 }
 
 pred broadcastTermination[msg : Msg] {
@@ -304,8 +339,9 @@ pred broadcastTermination[msg : Msg] {
     msg in Leader.outbox
 
     // Post-Conditions
-    rcvrs' = rcvrs + (msg -> Leader)
     outbox' = outbox - (Leader -> msg)
+    SendingMsg' = SendingMsg - msg
+    SentMsg' = SentMsg + msg
 
     // Frame Conditions
     Member' = Member
@@ -315,6 +351,7 @@ pred broadcastTermination[msg : Msg] {
     qnxt' = qnxt
     lnxt' = lnxt
     rcvrs' = rcvrs
+    PendingMsg' = PendingMsg
 }
 
 
@@ -348,4 +385,4 @@ fact {
 }
 
 
-run {#Node=3 #Msg=1 and eventually (#Member=3 and some msg : Msg | broadcastInitialisation[msg])} for 10 steps
+run {#Node=3 #Msg=1 and eventually (#Member=3 and some msg : Msg, m : Member | messageRedirect[msg, m])} for 10 steps

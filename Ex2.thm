@@ -9,50 +9,38 @@
 
 <node>
    <type name="Int"/>
+   <type name="Msg"/>
+   <type name="Node"/>
    <type name="String"/>
    <type name="univ"/>
    <type name="seq/Int"/>
+   <set name="this/SendingMsg" type="Msg"/>
+   <set name="this/SentMsg" type="Msg"/>
 </node>
 
-<node color="White" label="PendingMsg">
-   <type name="Ex1/PendingMsg"/>
-</node>
-
-<node label="Msg">
-   <type name="Ex1/Msg"/>
-</node>
-
-<node label="Node">
-   <type name="Ex1/Node"/>
-</node>
-
-<node label="SendingMsg">
-   <type name="Ex1/SendingMsg"/>
-</node>
-
-<node label="SentMsg">
-   <type name="Ex1/SentMsg"/>
+<node color="White">
+   <set name="this/PendingMsg" type="Msg"/>
 </node>
 
 <node showlabel="no">
-   <set name="Ex1/LQueue" type="Ex1/Node"/>
+   <set name="this/LQueue" type="Node"/>
 </node>
 
 <node showlabel="no" color="Blue">
-   <set name="Ex1/Member" type="Ex1/Node"/>
+   <set name="this/Member" type="Node"/>
 </node>
 
 <node showlabel="no" color="Green">
-   <set name="Ex1/Leader" type="Ex1/Node"/>
+   <set name="this/Leader" type="Node"/>
 </node>
 
 <node visible="yes" showlabel="no">
-   <set name="$msg" type="Ex1/Msg"/>
+   <set name="$msg" type="Msg"/>
 </node>
 
 <edge visible="no">
-   <relation name="lnxt"> <type name="Ex1/Node"/> <type name="Ex1/Node"/> <type name="Ex1/Node"/> </relation>
-   <relation name="qnxt"> <type name="Ex1/Node"/> <type name="Ex1/Node"/> <type name="Ex1/Node"/> </relation>
+   <relation name="lnxt"> <type name="Node"/> <type name="Node"/> <type name="Node"/> </relation>
+   <relation name="qnxt"> <type name="Node"/> <type name="Node"/> <type name="Node"/> </relation>
 </edge>
 
 </view>
