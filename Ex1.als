@@ -62,23 +62,24 @@ fact {
     LQueue = (Leader.lnxt).Member // the leader queue is the leader's queue
 }
 
-// Pending message wasn't recieved by any node
+// Pending message if broadcast hasn't started
 fact {
     no PendingMsg.rcvrs
 }
 
-// Sending messages were received by some but not all
+// Sending messages if broadcast started but not finished
 fact {
     all m : SendingMsg | 
     (
-        some m.rcvrs // received by some
-        and m.rcvrs != Member // FIXME
+        // m is in the outbox of a member that is not the sender
+        Leader not in m.rcvrs
     )
 }
 
-// Sent messages were received by all
+// Sent messages if broadcast finished
 fact {
-    all m : SentMsg | m.rcvrs = Member
+    all m : SentMsg | 
+        m not in Member.outbox
 }
 
 //run {#Member=4 #SentMsg=1 #SendingMsg=1 #PendingMsg=1 #Node=7 #Member.qnxt=2 #LQueue=0 #Leader.lnxt=2} for 10

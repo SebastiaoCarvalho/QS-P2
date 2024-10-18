@@ -321,8 +321,14 @@ pred broadcastInitialisation[msg : Msg] {
 
 pred messageRedirect[msg : Msg, m : Member] {
     // Pre-Conditions
+
+    // message is in the middle of broadcast
     msg in SendingMsg
+
+    // message is in m's outbox
     msg in m.outbox
+    // can't allow redirect from Leader (sender)
+    m != Leader
 
     // Post-Conditions
     outbox' = outbox - (m -> msg) + (m.nxt -> msg)

@@ -14,6 +14,8 @@ pred valid {
         // pending messages weren't received by any node
         no PendingMsg.rcvrs
         and
+        validSendingMsg[]
+        and validSentMsg[]
     )
 }
 
@@ -54,13 +56,27 @@ pred validLeaderQueue {
 pred validSendingMsg {
     all m : SendingMsg | 
     (
-        some m.rcvrs // received by some
-        and m.rcvrs != Member // not received by all
+        // m is in the outbox of a member that is not the sender
+        Leader not in m.rcvrs
     )
+}
+
+pred validSentMsg {
+    all m : SentMsg | 
+        // not in any member's outbox
+        m not in Member.outbox
 }
 
 assert validCheck {
     valid
+}
+
+fun visualizeQueue[] : Node -> lone Node {
+    Member.qnxt
+}
+
+fun visualizeLeader[] : Node -> lone Node {
+    Leader.lnxt
 }
 
 check validCheck for 3
