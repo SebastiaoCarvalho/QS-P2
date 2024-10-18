@@ -248,7 +248,10 @@ pred nonMemberExitAux[n : Node, m : Member] {
 
 pred leaderApplication[m : Member] {
     // Pre-Conditions
+
+    // m is not the Leader
     m != Leader
+    // m is not already in the leader queue
     m not in (Leader.lnxt).Member
 
     // Post-Conditions
@@ -272,9 +275,14 @@ pred leaderApplication[m : Member] {
 
 pred leaderPromotion[m : Member] {
     // Pre-Conditions
+
+    // leader queue is not empty
     some Leader.lnxt
+    // m is the first member in the leader queue
     m = (Leader.lnxt).Leader
+    // no broadcast in progress
     no SendingMsg
+    // the Leader already broadcasted all of their messages
     no Leader.outbox
 
     // Post-Conditions
@@ -346,7 +354,10 @@ pred messageRedirect[msg : Msg, m : Member] {
 
 pred broadcastTermination[msg : Msg] {
     // Pre-Conditions
+
+    // msg is in the middle of broadcast
     msg in SendingMsg
+    // msg is back in Leader's outbox
     msg in Leader.outbox
 
     // Post-Conditions

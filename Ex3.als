@@ -79,4 +79,165 @@ fun visualizeLeader[] : Node -> lone Node {
     Leader.lnxt
 }
 
+pred fairness {
+    fairnessMemberQueue[]
+    and
+    fairnessBecomeMember[]
+    and 
+    fairnessLeaderQueue[]
+    and
+    fairnessBecomeLeader[]
+    and
+    fairnessBroadcastInitialisation[]
+    and
+    fairnessMessageRedirect[]
+    and
+    fairnessTerminateBroadcast[]
+    
+}
+
+pred fairnessMemberQueue {
+    all n : Node |
+        (
+            (eventually (always (
+                // n is not a member
+                n not in Member
+                and
+                // n is not in any other member's queue
+                n !in (Member.qnxt).Node
+            )))
+            implies 
+            (always (eventually (
+                some m : Member |
+                memberApplication[n, m]
+            )))
+        )
+}
+
+pred fairnessBecomeMember {
+    all n : Node |
+        (
+            (eventually (always (
+                some m : Member |
+                    // m's queue is not empty
+                    some m.qnxt
+                    and
+                    // n is the first node in m's queue
+                    n = firstNodeInQueue[m]
+            )))
+            implies
+            (always (eventually (
+                some m : Member |
+                memberApplication[n, m]
+            )))
+        )
+}
+
+pred fairnessLeaderQueue {
+    all n : Node |
+        (
+            (eventually (always (
+                // m is not the Leader
+                n != Leader
+                and
+                // m is not already in the leader queue
+                n not in (Leader.lnxt).Member
+            )))
+            implies
+            (always (eventually (
+                leaderApplication[n]
+            )))
+        )
+}
+
+pred fairnessBecomeLeader {
+    all n : Node |
+        (
+            (eventually (always (
+                // leader queue is not empty
+                some Leader.lnxt
+                and
+                // m is the first member in the leader queue
+                n = (Leader.lnxt).Leader
+                and
+                // no broadcast in progress
+                no SendingMsg
+                and
+                // the Leader already broadcasted all of their messages
+                no Leader.outbox
+            )))
+            implies
+            (always (eventually (
+                leaderPromotion[n]
+            )))
+        )
+}
+
+pred fairnessBroadcastInitialisation {
+    all msg : Msg |
+        (
+            (eventually (always (
+                
+            // message is pending
+            msg in PendingMsg
+            and
+            // only leader can start broadcast
+            msg.sndr = Leader 
+            and
+            // only start broadcast if more than one member
+            some Member - Leader
+            )))
+            implies
+            (always (eventually (
+                broadcastInitialisation[msg]
+            )))
+        )
+}
+
+pred fairnessMessageRedirect {
+    all msg : Msg, m : Node |
+        (
+            ant[msg, m]
+            implies
+            post[msg, m]
+        )
+}
+
+pred ant[msg : Msg, m : Node] {
+    eventually always (
+        // message is in the middle of broadcast
+        msg in SendingMsg
+        and
+        // message is in m's outbox
+        msg in m.outbox
+        and
+        // can't allow redirect from Leader (sender)
+        m != Leader
+    )
+}
+
+pred post[msg : Msg, m : Node] {
+    always eventually messageRedirect[msg, m]
+}
+
+pred fairnessTerminateBroadcast {
+    all msg : Msg {
+        (
+            (eventually (always (
+                // message is in the middle of broadcast
+                msg in SendingMsg
+                and
+                // message is back in Leader's outbox
+                msg in Leader.outbox
+            )))
+            implies
+            (always (eventually (
+                broadcastTermination[msg]
+            )))
+        )
+    }
+}
+
 check validCheck for 3
+
+run {#Node=2 fairness} for 3 but 1 Msg
