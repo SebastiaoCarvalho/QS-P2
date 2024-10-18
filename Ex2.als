@@ -31,7 +31,10 @@ fun visualizeLeader[] : Node -> lone Node {
 
 pred init[] {
     Member = Leader
+    Leader.nxt = Leader
     Msg = PendingMsg
+    no SendingMsg
+    no SentMsg
     all m : Member | m.outbox = sndr.m
     no LQueue
     no qnxt
@@ -138,22 +141,21 @@ pred memberPrommotion[n : Node, m : Member] {
     // n's queue is empty
     no n.qnxt'
 
-    // m now points to n
-    m.nxt' = n
+    // m now points to n and n points to what m pointed to
+    nxt' = nxt - (m -> m.nxt) + (m -> n) + (n -> m.nxt)
 
-    // n now points to what m pointed to
-    n.nxt' = m.nxt
+    // put n's messages in n's outbox
+    n.outbox' = sndr.n
 
     // Frame Conditions
     Leader' = Leader
     LQueue' = LQueue
-    outbox' = outbox
     lnxt' = lnxt
     rcvrs' = rcvrs
+    // all other members outboxes are unchanged
+    (all m1 : (Member - n) | m1.outbox' = m1.outbox)
     // all other members queues are unchanged
     (all m1 : (Member - m) | m1.qnxt' = m1.qnxt)
-    // all other members next pointers are unchanged
-    (all m1 : (Member - m) | m1.nxt' = m1.nxt)
     messageStutter[]
 
 }
@@ -172,6 +174,15 @@ pred memberExit[m : Member] {
     // Leader cannot exit
     m != Leader
 
+    // m is not in the leader queue
+    m not in (Leader.lnxt).Member
+
+    // m's member queue is empty
+    no m.qnxt
+
+    // all of m's messages have been sent
+    (sndr.m & SentMsg) = sndr.m
+
     // Post-Conditions
 
     // remove m from Member
@@ -180,22 +191,12 @@ pred memberExit[m : Member] {
     // change node that pointed to m to point to what m pointed to
     nxt' = nxt - (m -> m.nxt) - (nxt.m -> m) + (nxt.m -> m.nxt)
 
-    // append m's queue to the node that m pointed to
-    m.nxt.qnxt' = m.nxt.qnxt + m.qnxt
-    
-    // remove m from Leader queue if present
-    m in (Leader.lnxt).Member
-    implies
-    memberExitLeaderQueue[m]
-
     // Frame Conditions
     Leader' = Leader
     outbox' = outbox
     rcvrs' = rcvrs
-    // if m not in Leader queue, Leader queue is unchanged
-    m not in (Leader.lnxt).Member implies (lnxt' = lnxt and LQueue' = LQueue)
-    // all other members queues are unchanged
-    (all m1 : (Member - m - m.nxt) | m1.qnxt' = m1.qnxt) 
+    lnxt' = lnxt
+    qnxt' = qnxt
     messageStutter[]
 }
 
@@ -274,6 +275,7 @@ pred leaderPromotion[m : Member] {
     some Leader.lnxt
     m = (Leader.lnxt).Leader
     no SendingMsg
+    no Leader.outbox
 
     // Post-Conditions
     no Leader.lnxt'
@@ -297,6 +299,8 @@ pred broadcastInitialisation[msg : Msg] {
     msg in PendingMsg
     // only leader can start broadcast
     msg.sndr = Leader 
+    // only start broadcast if more than one member
+    some Member - Leader
 
     // Post-Conditions
     outbox' = outbox - (Leader -> msg) + (Leader.nxt -> msg)
@@ -311,6 +315,7 @@ pred broadcastInitialisation[msg : Msg] {
     qnxt' = qnxt
     lnxt' = lnxt
     SentMsg' = SentMsg
+    rcvrs' = rcvrs
 
 }
 
@@ -371,6 +376,10 @@ pred trans[] {
     (some m : Member | leaderPromotion[m])
     or
     (some msg : Msg | broadcastInitialisation[msg])
+    or
+    (some msg : Msg, m : Member | messageRedirect[msg, m])
+    or
+    (some msg : Msg | broadcastTermination[msg])
     
 }
 
@@ -380,9 +389,17 @@ pred system[] {
     always trans[]
 }
 
+pred trace1[] {
+    #Node>=5
+    eventually (some m : Member | leaderPromotion[m])
+    eventually (some n : Node | some m : Member | memberPrommotion[n, m])
+    eventually (some m : Member | memberExit[m])
+    eventually (some n : Node | nonMemberExit[n])
+    eventually (some m: Msg | broadcastTermination[m])
+}
+
 fact {
     system[]
 }
 
-
-run {#Node=3 #Msg=1 and eventually (#Member=3 and some msg : Msg, m : Member | messageRedirect[msg, m])} for 10 steps
+run {trace1[]} for 6 but 10 steps

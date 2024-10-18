@@ -72,9 +72,7 @@ fact {
     all m : SendingMsg | 
     (
         some m.rcvrs // received by some
-        and m.rcvrs != Member // not received by all
-        and Leader in m.rcvrs // recieved by the leader
-        and no (m.rcvrs & (Node - Member)) // not received by non-members
+        and m.rcvrs != Member // FIXME
     )
 }
 
