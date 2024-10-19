@@ -238,6 +238,54 @@ pred fairnessTerminateBroadcast {
     }
 }
 
+// pred fairnessSendMessages {
+//     all n : node |
+//         (
+//             (eventually (always (
+//                 // n is the Leader
+//                 n in member
+//                 and
+//                 // n has messages to send
+//                 some n.outbox
+//             )))
+//             implies
+
+
+// }
+
+
+pred noExits {
+    noMemberExit[]
+    and
+    noMemberQueueExit[]
+}
+
+pred noMemberExit {
+    (all n : Node | (! eventually memberExit[n]))
+}
+
+pred noMemberQueueExit {
+    (all n : Node | (! eventually nonMemberExit[n]))
+}
+
+pred allBroadcastsTerminated {
+    no SendingMsg
+    no PendingMsg
+    SentMsg = Msg
+}
+
+assert liveness {
+    (#Node>=2  and fairness[] and noExits[]) implies (eventually allBroadcastsTerminated[])
+}
+
+assert wrongLiveness {
+    (#Node>=2  and fairness[]) implies (eventually allBroadcastsTerminated[])
+}
+
 check validCheck for 3
 
-run {#Node=2 fairness} for 3 but 1 Msg
+check liveness for 5
+
+check wrongLiveness for 5
+
+run {#Node=2 #Msg=1 fairness} for 3 but 1 Msg

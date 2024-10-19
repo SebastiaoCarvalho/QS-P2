@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<alloy>
+
+<view>
+
+<defaultnode/>
+
+<defaultedge/>
+
+<node>
+   <type name="Int"/>
+   <type name="String"/>
+   <type name="univ"/>
+   <type name="Ex2/Msg"/>
+   <type name="Ex2/Node"/>
+   <type name="seq/Int"/>
+</node>
+
+<node showlabel="no">
+   <set name="Ex2/LQueue" type="Ex2/Node"/>
+</node>
+
+<node showlabel="no" color="Black">
+   <set name="Ex2/SentMsg" type="Ex2/Msg"/>
+</node>
+
+<node showlabel="no" color="Blue">
+   <set name="Ex2/Member" type="Ex2/Node"/>
+</node>
+
+<node showlabel="no" color="Gray">
+   <set name="Ex2/SendingMsg" type="Ex2/Msg"/>
+</node>
+
+<node showlabel="no" color="Green">
+   <set name="Ex2/Leader" type="Ex2/Node"/>
+</node>
+
+<node showlabel="no" color="White">
+   <set name="Ex2/PendingMsg" type="Ex2/Msg"/>
+</node>
+
+<edge visible="no">
+   <relation name="lnxt"> <type name="Ex2/Node"/> <type name="Ex2/Node"/> <type name="Ex2/Node"/> </relation>
+   <relation name="qnxt"> <type name="Ex2/Node"/> <type name="Ex2/Node"/> <type name="Ex2/Node"/> </relation>
+</edge>
+
+</view>
+
+</alloy>

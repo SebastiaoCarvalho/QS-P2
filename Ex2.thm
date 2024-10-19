@@ -14,8 +14,21 @@
    <type name="String"/>
    <type name="univ"/>
    <type name="seq/Int"/>
-   <set name="this/SendingMsg" type="Msg"/>
+   <set name="$memberPrommotion_n" type="Node"/>
+   <set name="$nonMemberExit_m" type="Node"/>
+   <set name="$trace1_m" type="Node"/>
+   <set name="$trace1_m&apos;" type="Node"/>
+   <set name="$trace1_m&apos;&apos;" type="Node"/>
+   <set name="$trace1_m&apos;&apos;&apos;" type="Msg"/>
+   <set name="$trace1_n" type="Node"/>
+</node>
+
+<node color="Black">
    <set name="this/SentMsg" type="Msg"/>
+</node>
+
+<node color="Gray">
+   <set name="this/SendingMsg" type="Msg"/>
 </node>
 
 <node color="White">
@@ -32,10 +45,6 @@
 
 <node showlabel="no" color="Green">
    <set name="this/Leader" type="Node"/>
-</node>
-
-<node visible="yes" showlabel="no">
-   <set name="$msg" type="Msg"/>
 </node>
 
 <edge visible="no">

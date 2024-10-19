@@ -30,34 +30,97 @@ fun visualizeLeader[] : Node -> lone Node {
 }
 
 pred init[] {
+    // only 1 Member which is the Leader
     Member = Leader
+    // Leader points to themselves
     Leader.nxt = Leader
+
+    // Messages are all pending
     Msg = PendingMsg
     no SendingMsg
     no SentMsg
-    all m : Member | m.outbox = sndr.m
+
+    // Leader's messages in their outbox
+    outbox = Leader -> sndr.Leader
+
+    // all queues are empty
     no LQueue
     no qnxt
     no lnxt
+
+    // no messages received
     no rcvrs
 }
 
-pred stutter[] {
-    Member' = Member
-    Leader' = Leader
-    LQueue' = LQueue
-    nxt' = nxt
-    qnxt' = qnxt
-    outbox' = outbox
-    lnxt' = lnxt
-    rcvrs' = rcvrs
-    messageStutter[]
+pred stutter {
+    topologicStutter[]
+    broadcastStutter[]
 }
 
-pred messageStutter[] {
+pred broadcastStutter {
+    messageStutter[]
+    rcvrs' = rcvrs
+    outbox' = outbox
+}
+
+pred messageStutter {
     PendingMsg' = PendingMsg
     SendingMsg' = SendingMsg
     SentMsg' = SentMsg
+}
+
+pred topologicStutter {
+    leaderStutter[]
+    memberStutter[]
+}
+
+pred leaderStutter {
+    Leader' = Leader
+    LQueue' = LQueue
+    lnxt' = lnxt
+}
+
+pred memberStutter {
+    Member' = Member
+    nxt' = nxt
+    qnxt' = qnxt
+}
+
+fun firstNodeInQueue[m : Member] : Node {
+    (m.qnxt).m
+}
+
+fun lastNodeInQueue[queue : Node -> Node] : Node {
+    // last node is in domain but not in counter domain
+    queue.Node - Node.queue
+}
+
+pred isNodeInQueue[n : Node, queue : Node -> lone Node] {
+    n in queue.Node
+}
+
+pred inAnyQueue[n : Node] {
+    n in (Member.qnxt).Node
+}
+
+pred isInLeaderQueue[m : Member] {
+    m in (Leader.lnxt).Member
+}
+
+fun previousInQueue[n : Node, queue : Node -> lone Node] : Node {
+    queue.n
+}
+
+fun nextInQueue[n : Node, queue : Node -> lone Node] : Node {
+    n.queue
+}
+
+fun previousInLeaderQueue[m : Member] : Member {
+    (Leader.lnxt).m
+}
+
+fun nextInLeaderQueue[m : Member] : Member {
+    m.(Leader.lnxt)
 }
 
 pred memberApplication[n : Node, m: Member] {
@@ -66,7 +129,7 @@ pred memberApplication[n : Node, m: Member] {
     // n is not a member
     n not in Member
     // n is not in any other member's queue
-    n !in (Member.qnxt).Node
+    ! inAnyQueue[n]
 
     // Post-Conditions
 
@@ -77,15 +140,11 @@ pred memberApplication[n : Node, m: Member] {
     
     // Frame Conditions
     Member' = Member
-    Leader' = Leader
-    LQueue' = LQueue
     nxt' = nxt
-    outbox' = outbox
-    lnxt' = lnxt
-    rcvrs' = rcvrs
     // all other members queues are unchanged
     (all m1 : (Member - m) | m1.qnxt' = m1.qnxt)
-    messageStutter[]
+    leaderStutter[]
+    broadcastStutter[]
 }
 
 pred addToEmptyQueue[n : Node, m : Member] {
@@ -112,16 +171,11 @@ pred addToNonEmptyQueue[n : Node, m : Member] {
     m.qnxt' = m.qnxt + (n -> lastNodeInQueue[m.qnxt])
 }
 
-fun firstNodeInQueue[m : Member] : Node {
-    (m.qnxt).m
+pred memberPrommotion[m : Member] {
+    some n : Node | memberPrommotionAux[n, m]
 }
 
-fun lastNodeInQueue[queue : Node -> Node] : Node {
-    // last node is in domain but not in counter domain
-    queue.Node - Node.queue
-}
-
-pred memberPrommotion[n : Node, m : Member] {
+pred memberPrommotionAux[n : Node, m : Member] {
     // Pre-Conditions
 
     // m's queue is not empty
@@ -148,9 +202,7 @@ pred memberPrommotion[n : Node, m : Member] {
     n.outbox' = sndr.n
 
     // Frame Conditions
-    Leader' = Leader
-    LQueue' = LQueue
-    lnxt' = lnxt
+    leaderStutter[]
     rcvrs' = rcvrs
     // all other members outboxes are unchanged
     (all m1 : (Member - n) | m1.outbox' = m1.outbox)
@@ -160,14 +212,6 @@ pred memberPrommotion[n : Node, m : Member] {
 
 }
 
-fun previousInQueue[n : Node, queue : Node -> lone Node] : Node {
-    queue.n
-}
-
-fun nextInQueue[n : Node, queue : Node -> lone Node] : Node {
-    n.queue
-}
-
 pred memberExit[m : Member] {
     // Pre-Conditions
 
@@ -175,7 +219,7 @@ pred memberExit[m : Member] {
     m != Leader
 
     // m is not in the leader queue
-    m not in (Leader.lnxt).Member
+    ! isInLeaderQueue[m]
 
     // m's member queue is empty
     no m.qnxt
@@ -191,31 +235,14 @@ pred memberExit[m : Member] {
     // change node that pointed to m to point to what m pointed to
     nxt' = nxt - (m -> m.nxt) - (nxt.m -> m) + (nxt.m -> m.nxt)
 
+    // remove m's messages from outbox
+    outbox' = outbox - (m -> m.outbox)
+
     // Frame Conditions
-    Leader' = Leader
-    outbox' = outbox
-    rcvrs' = rcvrs
-    lnxt' = lnxt
+    leaderStutter[]
     qnxt' = qnxt
+    rcvrs' = rcvrs
     messageStutter[]
-}
-
-fun previousInLeaderQueue[m : Member] : Member {
-    (Leader.lnxt).m
-}
-
-fun nextInLeaderQueue[m : Member] : Member {
-    m.(Leader.lnxt)
-}
-
-pred memberExitLeaderQueue[m : Member] {
-    // Remove m from Leader's queue, making member that pointed to m point to the member m pointed to
-    Leader.lnxt' = Leader.lnxt - (previousInLeaderQueue[m]-> m) 
-        - (m -> nextInLeaderQueue[m])
-        + (previousInLeaderQueue[m] -> nextInLeaderQueue[m])
-
-    // Remove m from LQueue
-    LQueue' = LQueue - m
 }
 
 pred nonMemberExit[n : Node] {
@@ -231,19 +258,17 @@ pred nonMemberExitAux[n : Node, m : Member] {
     n in (m.qnxt).Node
 
     // Post-Conditions
+
+    // update m's queue to have node that pointed to n point to what n pointed to
     m.qnxt' = m.qnxt - (n -> nextInQueue[n, m.qnxt]) - (previousInQueue[n, m.qnxt] -> n) + (previousInQueue[n, m.qnxt] -> nextInQueue[n, m.qnxt])
 
     // Frame Conditions
     Member' = Member
-    Leader' = Leader
-    LQueue' = LQueue
     nxt' = nxt
-    outbox' = outbox
-    lnxt' = lnxt
-    rcvrs' = rcvrs
     // all other members queues are unchanged
-    (all m1 : (Member - m) | m1.qnxt' = m1.qnxt) 
-    messageStutter[]
+    (all m1 : (Member - m) | m1.qnxt' = m1.qnxt)
+    leaderStutter[]
+    broadcastStutter[]
 }
 
 pred leaderApplication[m : Member] {
@@ -265,12 +290,8 @@ pred leaderApplication[m : Member] {
 
     // Frame Conditions
     Leader' = Leader
-    Member' = Member
-    nxt' = nxt
-    qnxt' = qnxt
-    outbox' = outbox
-    rcvrs' = rcvrs
-    messageStutter[]
+    memberStutter[]
+    broadcastStutter[]
 }
 
 pred leaderPromotion[m : Member] {
@@ -292,12 +313,8 @@ pred leaderPromotion[m : Member] {
     Leader' = m
 
     // Frame Conditions
-    Member' = Member
-    nxt' = nxt
-    qnxt' = qnxt
-    outbox' = outbox
-    rcvrs' = rcvrs
-    messageStutter[]
+    memberStutter[]
+    broadcastStutter[]
 }
 
 pred broadcastInitialisation[msg : Msg] {
@@ -316,12 +333,7 @@ pred broadcastInitialisation[msg : Msg] {
     SendingMsg' = SendingMsg + msg
 
     // Frame Conditions
-    Member' = Member
-    Leader' = Leader
-    LQueue' = LQueue
-    nxt' = nxt
-    qnxt' = qnxt
-    lnxt' = lnxt
+    topologicStutter[]
     SentMsg' = SentMsg
     rcvrs' = rcvrs
 
@@ -343,12 +355,7 @@ pred messageRedirect[msg : Msg, m : Member] {
     rcvrs' = rcvrs + (msg -> m)
 
     // Frame Conditions
-    Member' = Member
-    Leader' = Leader
-    LQueue' = LQueue
-    nxt' = nxt
-    qnxt' = qnxt
-    lnxt' = lnxt
+    topologicStutter[]
     messageStutter[]
 }
 
@@ -361,17 +368,18 @@ pred broadcastTermination[msg : Msg] {
     msg in Leader.outbox
 
     // Post-Conditions
+
+    // remove msg from the Leader's outbox
     outbox' = outbox - (Leader -> msg)
+
+    // remove from Sending since broadcast is done
     SendingMsg' = SendingMsg - msg
+
+    // add to SentMsg since broadcast is done
     SentMsg' = SentMsg + msg
 
     // Frame Conditions
-    Member' = Member
-    Leader' = Leader
-    LQueue' = LQueue
-    nxt' = nxt
-    qnxt' = qnxt
-    lnxt' = lnxt
+    topologicStutter[]
     rcvrs' = rcvrs
     PendingMsg' = PendingMsg
 }
@@ -382,7 +390,7 @@ pred trans[] {
     or
     (some n : (Node - Member) | some m : Member | memberApplication[n, m])
     or
-    (some n : Node | some m : Member | memberPrommotion[n, m])
+    (some m : Member | memberPrommotion[m])
     or
     (some m : Member | memberExit[m])
     or
@@ -409,7 +417,7 @@ pred system[] {
 pred trace1[] {
     #Node>=5
     eventually (some m : Member | leaderPromotion[m])
-    eventually (some n : Node | some m : Member | memberPrommotion[n, m])
+    eventually (some m : Member | memberPrommotion[m])
     eventually (some m : Member | memberExit[m])
     eventually (some n : Node | nonMemberExit[n])
     eventually (some m: Msg | broadcastTermination[m])
@@ -418,5 +426,11 @@ pred trace1[] {
 fact {
     system[]
 }
+
+pred test {
+    eventually (some m : Member - Leader | some m.outbox and memberExit[m] )
+}
+
+run test for 3 but 1 Msg
 
 run {trace1[]} for 6 but 10 steps
