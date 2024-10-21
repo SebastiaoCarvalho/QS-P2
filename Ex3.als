@@ -98,13 +98,51 @@ pred fairness {
     fairnessLeaderQueue[]
     and
     fairnessBecomeLeader[]
-    // and
-    // fairnessBroadcastInitialisation[]
-    // and
-    // fairnessMessageRedirect[]
-    // and
-    // fairnessTerminateBroadcast[]
+    and
+    fairnessBroadcastInitialisation[]
+    and
+    fairnessMessageRedirect[]
+    and
+    fairnessTerminateBroadcast[]
+    //and fairnessExits[]
     
+}
+
+pred fairnessExits {
+    all n : Node, m : Member |
+        ((
+            (eventually (always (
+                // Leader cannot exit
+                n != Leader
+                and
+                // m is not in the leader queue
+                ! isInLeaderQueue[n]
+                and
+                // m's member queue is empty
+                no n.qnxt
+                and
+                // all of m's messages have been sent
+                (sndr.n & SentMsg) = sndr.n
+            )))
+            implies 
+            (always (eventually (
+                memberExit[n]
+            )))
+        )
+        and
+            (eventually (always (
+                // n is not a Member
+                n in Node - Member
+                and
+                // n is in m's queue
+                n in (m.qnxt).Node
+            )))
+            implies
+            (always (eventually (
+                nonMemberExitAux[n, m]
+            )))
+        )
+                
 }
 
 pred fairnessMemberQueue {
@@ -222,14 +260,6 @@ pred fairnessMessageRedirect {
         )
 }
 
-pred ant[msg : Msg, m : Node] {
-    
-}
-
-pred post[msg : Msg, m : Node] {
-    
-}
-
 pred fairnessTerminateBroadcast {
     all msg : Msg {
         (
@@ -286,4 +316,4 @@ check liveness for 5
 
 check wrongLiveness for 3 but 15 steps
 
-run {#Node=2 #Msg=1 fairness and eventually (some m : Member | memberExit[m])} for 3 but 15 steps
+run {#Node=2 #Msg=1 fairness } for 3 but 15 steps
