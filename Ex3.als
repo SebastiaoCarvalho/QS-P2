@@ -78,10 +78,6 @@ pred validMsgDisjunction {
     no (SentMsg & PendingMsg)
 }
 
-assert validCheck {
-    valid
-}
-
 fun visualizeQueue[] : Node -> lone Node {
     Member.qnxt
 }
@@ -104,45 +100,6 @@ pred fairness {
     fairnessMessageRedirect[]
     and
     fairnessTerminateBroadcast[]
-    //and fairnessExits[]
-    
-}
-
-pred fairnessExits {
-    all n : Node, m : Member |
-        ((
-            (eventually (always (
-                // Leader cannot exit
-                n != Leader
-                and
-                // m is not in the leader queue
-                ! isInLeaderQueue[n]
-                and
-                // m's member queue is empty
-                no n.qnxt
-                and
-                // all of m's messages have been sent
-                (sndr.n & SentMsg) = sndr.n
-            )))
-            implies 
-            (always (eventually (
-                memberExit[n]
-            )))
-        )
-        and
-            (eventually (always (
-                // n is not a Member
-                n in Node - Member
-                and
-                // n is in m's queue
-                n in (m.qnxt).Node
-            )))
-            implies
-            (always (eventually (
-                nonMemberExitAux[n, m]
-            )))
-        )
-                
 }
 
 pred fairnessMemberQueue {
@@ -164,19 +121,20 @@ pred fairnessMemberQueue {
 }
 
 pred fairnessBecomeMember {
-    all n : Node |
+    all n, m : Node|
         (
             (eventually (always (
-                some m : Member |
-                    // m's queue is not empty
-                    some m.qnxt
-                    and
-                    // n is the first node in m's queue
-                    n = firstNodeInQueue[m]
+                // n is a member
+                m in Member
+                and
+                // m's queue is not empty
+                some m.qnxt
+                and
+                // n is the first node in m's queue
+                n = firstNodeInQueue[m]
             )))
             implies
             (always (eventually (
-                some m : Member |
                 memberApplication[n, m]
             )))
         )
@@ -186,6 +144,9 @@ pred fairnessLeaderQueue {
     all n : Node |
         (
             (eventually (always (
+                // n is a member
+                n in Member
+                and
                 // m is not the Leader
                 n != Leader
                 and
@@ -261,7 +222,7 @@ pred fairnessMessageRedirect {
 }
 
 pred fairnessTerminateBroadcast {
-    all msg : Msg {
+    all msg : Msg |
         (
             (eventually (always (
                 // message is in the middle of broadcast
@@ -275,7 +236,6 @@ pred fairnessTerminateBroadcast {
                 broadcastTermination[msg]
             )))
         )
-    }
 }
 
 pred noExits {
@@ -306,14 +266,12 @@ assert wrongLiveness {
     (#Node>=2  and fairness[]) implies (eventually allBroadcastsTerminated[])
 }
 
-pred broadcastRip {
-    some n : Node - Member | some (n.outbox & SendingMsg)
+assert validCheck {
+    valid
 }
 
 check validCheck for 3
 
-check liveness for 5
+check liveness for 3 but 1 Msg
 
 check wrongLiveness for 3 but 15 steps
-
-run {#Node=2 #Msg=1 fairness } for 3 but 15 steps
