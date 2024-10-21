@@ -421,6 +421,7 @@ pred trace2[] {
     eventually (some m : Member | memberExit[m])
     eventually (some n : Node | nonMemberExit[n])
     eventually (some m: Msg | broadcastTermination[m])
+    eventually always stutter
 }
 
 fact {

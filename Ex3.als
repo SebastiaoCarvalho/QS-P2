@@ -46,14 +46,16 @@ pred validMemberQueue2 {
 }
 
 pred validLeaderQueue {
-    // only members are in the leader queueLQueue
-    no (Node - Member).(Leader.lnxt) 
-    // the leader queue ends in the leader
-    some (Leader.lnxt) implies (one (Leader.lnxt).Leader and no Leader.(Leader.lnxt)) 
-    // all members can reach the leader
-    all m : Member | (some m.(Leader.lnxt)) implies (Leader in m.(^(Leader.lnxt))) 
     // the leader queue is the leader's queue
     LQueue = (Leader.lnxt).Member 
+    // only members are in the leader queueLQueue
+    no ((Node - Member) & LQueue) 
+    // the leader queue ends in the leader (if it exists)
+    some  LQueue implies (one (Leader.lnxt).Leader and no Leader.(Leader.lnxt)) 
+    // each member is only pointed to by at most one non-member
+    all m : LQueue | lone (Leader.lnxt).m 
+    // all members can reach the leader
+    all m : Member | (some m.(Leader.lnxt)) implies (Leader in m.(^(Leader.lnxt))) 
 }
 
 pred validSendingMsg {
@@ -96,12 +98,12 @@ pred fairness {
     fairnessLeaderQueue[]
     and
     fairnessBecomeLeader[]
-    and
-    fairnessBroadcastInitialisation[]
-    and
-    fairnessMessageRedirect[]
-    and
-    fairnessTerminateBroadcast[]
+    // and
+    // fairnessBroadcastInitialisation[]
+    // and
+    // fairnessMessageRedirect[]
+    // and
+    // fairnessTerminateBroadcast[]
     
 }
 
@@ -186,16 +188,15 @@ pred fairnessBroadcastInitialisation {
     all msg : Msg |
         (
             (eventually (always (
-                
-            // message is pending
-            msg in PendingMsg
-            and
-            // only leader can start broadcast
-            msg.sndr = Leader 
-            and
-            // only start broadcast if more than one member
-            some Member - Leader
-            )))
+                // message is pending
+                msg in PendingMsg
+                and
+                // only leader can start broadcast
+                msg.sndr = Leader 
+                and
+                // only start broadcast if more than one member
+                some Member - Leader
+                )))
             implies
             (always (eventually (
                 broadcastInitialisation[msg]
@@ -206,27 +207,27 @@ pred fairnessBroadcastInitialisation {
 pred fairnessMessageRedirect {
     all msg : Msg, m : Node |
         (
-            ant[msg, m]
+            (eventually (always (
+                // message is in the middle of broadcast
+                msg in SendingMsg
+                and
+                // message is in m's outbox
+                msg in m.outbox
+                and
+                // can't allow redirect from Leader (sender)
+                m != Leader
+            )))
             implies
-            post[msg, m]
+            (always (eventually (messageRedirect[msg, m])))
         )
 }
 
 pred ant[msg : Msg, m : Node] {
-    eventually always (
-        // message is in the middle of broadcast
-        msg in SendingMsg
-        and
-        // message is in m's outbox
-        msg in m.outbox
-        and
-        // can't allow redirect from Leader (sender)
-        m != Leader
-    )
+    
 }
 
 pred post[msg : Msg, m : Node] {
-    always eventually messageRedirect[msg, m]
+    
 }
 
 pred fairnessTerminateBroadcast {

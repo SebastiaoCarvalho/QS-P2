@@ -57,10 +57,11 @@ fact {
 
 // the leader queue consists of a list of member nodes ending in the leader
 fact {
-    no (Node - Member).(Leader.lnxt) // only members are in the leader queueLQueue
-    some (Leader.lnxt) implies (one (Leader.lnxt).Leader and no Leader.(Leader.lnxt)) // the leader queue ends in the leader
-    all m : Member | (some m.(Leader.lnxt)) implies (Leader in m.(^(Leader.lnxt))) // all members can reach the leader
     LQueue = (Leader.lnxt).Member // the leader queue is the leader's queue
+    no ((Node - Member) & LQueue) // only members are in the leader queueLQueue
+    some  LQueue implies (one (Leader.lnxt).Leader and no Leader.(Leader.lnxt)) // the leader queue ends in the leader
+    all m : LQueue | lone (Leader.lnxt).m // each member is only pointed to by at most one non-member
+    all m : Member | (some m.(Leader.lnxt)) implies (Leader in m.(^(Leader.lnxt))) // all members can reach the leader
 }
 
 // Pending message if broadcast hasn't started
@@ -90,6 +91,7 @@ fact {
 // Sent messages if broadcast finished
 fact {
     all m : SentMsg | 
+        // Sent messages are not in anyone's outbox
         m not in Member.outbox
 }
 
@@ -100,13 +102,20 @@ fact {
     no (SentMsg & PendingMsg)
 }
 
+// A message needs to be either pending, sending or sent
+fact {
+    all msg : Msg | msg in (PendingMsg + SendingMsg + SentMsg)
+}
+
 pred trace1 {
     #Node>=5 
-    (some Leader.lnxt) 
+    (some Leader.lnxt)
+    // at least 2 members have a non-empty queue
     #(Member.qnxt.Member)>=2 
     some SendingMsg
     some SentMsg 
     some PendingMsg
 }
 
+// Run this trace to generate answers for Ex1.2.1 and Ex1.2.2
 run {trace1} for 7
