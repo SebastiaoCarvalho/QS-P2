@@ -14,37 +14,51 @@
    <type name="String"/>
    <type name="univ"/>
    <type name="seq/Int"/>
+   <set name="$memberPrommotion_n" type="Node"/>
+   <set name="$nonMemberExit_m" type="Node"/>
+   <set name="$trace1_m" type="Node"/>
+   <set name="$trace1_m&apos;" type="Node"/>
+   <set name="$trace1_m&apos;&apos;" type="Node"/>
+   <set name="$trace1_m&apos;&apos;&apos;" type="Msg"/>
+   <set name="$trace1_n" type="Node"/>
 </node>
 
-<node color="Gray">
-   <type name="SendingMsg"/>
-</node>
-
-<node color="Red">
-   <type name="SentMsg"/>
-</node>
-
-<node color="White">
-   <type name="PendingMsg"/>
-</node>
-
-<node showlabel="no">
-   <set name="LQueue" type="Node"/>
-</node>
-
-<node showlabel="no" color="Blue">
+<node showlabel="no" style="inherit" color="Blue">
    <set name="this/Member" type="Node"/>
 </node>
 
-<node showlabel="no" color="Green">
+<node showlabel="no" style="inherit" color="Green">
    <set name="this/Leader" type="Node"/>
 </node>
 
-<edge visible="no">
+<node style="inherit">
+   <set name="this/LQueue" type="Node"/>
+</node>
+
+<node style="inherit" color="Black">
+   <set name="this/SentMsg" type="Msg"/>
+</node>
+
+<node style="inherit" color="Gray">
+   <set name="this/SendingMsg" type="Msg"/>
+</node>
+
+<node style="inherit" color="White">
+   <set name="this/PendingMsg" type="Msg"/>
+</node>
+
+<edge style="inherit">
+   <relation name="nxt"> <type name="Node"/> <type name="Node"/> </relation>
+</edge>
+
+<edge style="inherit" visible="no">
    <relation name="lnxt"> <type name="Node"/> <type name="Node"/> <type name="Node"/> </relation>
    <relation name="outbox"> <type name="Node"/> <type name="Msg"/> </relation>
    <relation name="qnxt"> <type name="Node"/> <type name="Node"/> <type name="Node"/> </relation>
    <relation name="rcvrs"> <type name="Msg"/> <type name="Node"/> </relation>
+</edge>
+
+<edge visible="no">
    <relation name="sndr"> <type name="Msg"/> <type name="Node"/> </relation>
 </edge>
 

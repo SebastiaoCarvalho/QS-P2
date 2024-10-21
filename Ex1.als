@@ -1,25 +1,26 @@
 module Ex1
 
-sig Node {}
+sig Node {
+  outbox: set Msg
+}
 
- sig Member in Node {
-    nxt: lone Member,
-    qnxt : Node -> lone Node,
-    outbox: set Msg
+sig Member in Node { 
+ nxt: one Node, 
+ qnxt : Node -> lone Node 
 }
 
 one sig Leader in Member {
-    lnxt: Node -> lone Node
+   lnxt: Member -> lone Member
 }
 
 sig LQueue in Member {}
 
-abstract sig Msg {
-    sndr: Node,
-    rcvrs: set Node
+sig Msg {
+  sndr: Node, 
+  rcvrs: set Node 
 }
 
-sig SentMsg, SendingMsg, PendingMsg extends Msg {}
+sig SentMsg, SendingMsg, PendingMsg in Msg {}
 
 
 fun visualizeQueue[] : Node -> lone Node {
@@ -64,7 +65,14 @@ fact {
 
 // Pending message if broadcast hasn't started
 fact {
-    no PendingMsg.rcvrs
+    all msg : PendingMsg | 
+    (
+        // message is in the sender's outbox
+        msg in msg.sndr.outbox
+        and
+        // message was not received by anyone
+        no msg.rcvrs
+    )
 }
 
 // Sending messages if broadcast started but not finished
@@ -72,7 +80,10 @@ fact {
     all m : SendingMsg | 
     (
         // m is in the outbox of a member that is not the sender
-        Leader not in m.rcvrs
+        m.sndr not in m.rcvrs
+        and
+        // m is in someone's outbox
+        m in Node.outbox
     )
 }
 
@@ -82,5 +93,20 @@ fact {
         m not in Member.outbox
 }
 
-//run {#Member=4 #SentMsg=1 #SendingMsg=1 #PendingMsg=1 #Node=7 #Member.qnxt=2 #LQueue=0 #Leader.lnxt=2} for 10
-run {#Node>=5 (some Leader.lnxt) #(Member.qnxt.Member)>=2 #SendingMsg>=1 #SentMsg>=1 #PendingMsg>=1} for 7
+// A message can only be sent, sending or pending
+fact {
+    no (SendingMsg & SentMsg)
+    no (SendingMsg & PendingMsg)
+    no (SentMsg & PendingMsg)
+}
+
+pred trace1 {
+    #Node>=5 
+    (some Leader.lnxt) 
+    #(Member.qnxt.Member)>=2 
+    some SendingMsg
+    some SentMsg 
+    some PendingMsg
+}
+
+run {trace1} for 7

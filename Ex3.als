@@ -3,8 +3,8 @@ module Ex3
 open Ex2
 
 pred valid {
-    // all members are reachable from each other)
     always (
+        // all members are reachable from each other)
         (all m: Member | m.^nxt=Member)
         and
         validMemberQueue1[]
@@ -15,7 +15,10 @@ pred valid {
         no PendingMsg.rcvrs
         and
         validSendingMsg[]
-        and validSentMsg[]
+        and 
+        validSentMsg[]
+        and
+        validMsgDisjunction[]
     )
 }
 
@@ -67,6 +70,12 @@ pred validSentMsg {
         m not in Member.outbox
 }
 
+pred validMsgDisjunction {
+    no (SendingMsg & SentMsg)
+    no (SendingMsg & PendingMsg)
+    no (SentMsg & PendingMsg)
+}
+
 assert validCheck {
     valid
 }
@@ -104,7 +113,7 @@ pred fairnessMemberQueue {
                 n not in Member
                 and
                 // n is not in any other member's queue
-                n !in (Member.qnxt).Node
+                ! inAnyQueue[n]
             )))
             implies 
             (always (eventually (
@@ -154,7 +163,7 @@ pred fairnessBecomeLeader {
     all n : Node |
         (
             (eventually (always (
-                // leader queue is not empty
+                /// leader queue is not empty
                 some Leader.lnxt
                 and
                 // m is the first member in the leader queue
@@ -164,7 +173,7 @@ pred fairnessBecomeLeader {
                 no SendingMsg
                 and
                 // the Leader already broadcasted all of their messages
-                no Leader.outbox
+                no (sndr.Leader & (SendingMsg + PendingMsg))
             )))
             implies
             (always (eventually (
@@ -238,22 +247,6 @@ pred fairnessTerminateBroadcast {
     }
 }
 
-// pred fairnessSendMessages {
-//     all n : node |
-//         (
-//             (eventually (always (
-//                 // n is the Leader
-//                 n in member
-//                 and
-//                 // n has messages to send
-//                 some n.outbox
-//             )))
-//             implies
-
-
-// }
-
-
 pred noExits {
     noMemberExit[]
     and
@@ -282,10 +275,14 @@ assert wrongLiveness {
     (#Node>=2  and fairness[]) implies (eventually allBroadcastsTerminated[])
 }
 
+pred broadcastRip {
+    some n : Node - Member | some (n.outbox & SendingMsg)
+}
+
 check validCheck for 3
 
 check liveness for 5
 
-check wrongLiveness for 5
+check wrongLiveness for 3 but 15 steps
 
-run {#Node=2 #Msg=1 fairness} for 3 but 1 Msg
+run {#Node=2 #Msg=1 fairness and eventually (some m : Member | memberExit[m])} for 3 but 15 steps

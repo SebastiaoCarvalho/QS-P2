@@ -1,22 +1,23 @@
 module Ex2
 
-sig Node {}
+sig Node {
+  var outbox: set Msg
+}
 
-var sig Member in Node {
-    var nxt: lone Member,
-    var qnxt : Node -> lone Node,
-    var outbox: set Msg
+var sig Member in Node { 
+ var nxt: one Node, 
+ var qnxt : Node -> lone Node 
 }
 
 var one sig Leader in Member {
-    var lnxt: Node -> lone Node
+   var lnxt: Member -> lone Member
 }
 
 var sig LQueue in Member {}
 
 sig Msg {
-    sndr: Node,
-    var rcvrs: set Node
+  sndr: Node, 
+  var rcvrs: set Node 
 }
 
 var sig SentMsg, SendingMsg, PendingMsg in Msg {}
@@ -40,8 +41,8 @@ pred init[] {
     no SendingMsg
     no SentMsg
 
-    // Leader's messages in their outbox
-    outbox = Leader -> sndr.Leader
+    // load messages in the sender's outbox
+    (all n : Node | n.outbox = sndr.n)
 
     // all queues are empty
     no LQueue
@@ -51,6 +52,8 @@ pred init[] {
     // no messages received
     no rcvrs
 }
+
+// Stutter predicates
 
 pred stutter {
     topologicStutter[]
@@ -85,6 +88,8 @@ pred memberStutter {
     nxt' = nxt
     qnxt' = qnxt
 }
+
+// Utility functions for state transformers
 
 fun firstNodeInQueue[m : Member] : Node {
     (m.qnxt).m
@@ -122,6 +127,8 @@ fun previousInLeaderQueue[m : Member] : Member {
 fun nextInLeaderQueue[m : Member] : Member {
     m.(Leader.lnxt)
 }
+
+// State transformers
 
 pred memberApplication[n : Node, m: Member] {
     // Pre-Conditions
@@ -198,17 +205,14 @@ pred memberPrommotionAux[n : Node, m : Member] {
     // m now points to n and n points to what m pointed to
     nxt' = nxt - (m -> m.nxt) + (m -> n) + (n -> m.nxt)
 
-    // put n's messages in n's outbox
-    n.outbox' = sndr.n
 
     // Frame Conditions
     leaderStutter[]
-    rcvrs' = rcvrs
     // all other members outboxes are unchanged
     (all m1 : (Member - n) | m1.outbox' = m1.outbox)
     // all other members queues are unchanged
     (all m1 : (Member - m) | m1.qnxt' = m1.qnxt)
-    messageStutter[]
+    broadcastStutter[]
 
 }
 
@@ -235,14 +239,10 @@ pred memberExit[m : Member] {
     // change node that pointed to m to point to what m pointed to
     nxt' = nxt - (m -> m.nxt) - (nxt.m -> m) + (nxt.m -> m.nxt)
 
-    // remove m's messages from outbox
-    outbox' = outbox - (m -> m.outbox)
-
     // Frame Conditions
     leaderStutter[]
     qnxt' = qnxt
-    rcvrs' = rcvrs
-    messageStutter[]
+    broadcastStutter[]
 }
 
 pred nonMemberExit[n : Node] {
@@ -304,7 +304,7 @@ pred leaderPromotion[m : Member] {
     // no broadcast in progress
     no SendingMsg
     // the Leader already broadcasted all of their messages
-    no Leader.outbox
+    no (sndr.Leader & (SendingMsg + PendingMsg))
 
     // Post-Conditions
     no Leader.lnxt'
@@ -414,7 +414,7 @@ pred system[] {
     always trans[]
 }
 
-pred trace1[] {
+pred trace2[] {
     #Node>=5
     eventually (some m : Member | leaderPromotion[m])
     eventually (some m : Member | memberPrommotion[m])
@@ -433,4 +433,4 @@ pred test {
 
 run test for 3 but 1 Msg
 
-run {trace1[]} for 6 but 10 steps
+run {trace2[]} for 6 but 1 Msg
