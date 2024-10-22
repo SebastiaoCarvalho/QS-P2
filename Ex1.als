@@ -23,11 +23,11 @@ sig Msg {
 sig SentMsg, SendingMsg, PendingMsg in Msg {}
 
 
-fun visualizeQueue[] : Node -> lone Node {
+fun visualizeMemberQueue[] : Node -> lone Node {
     Member.qnxt
 }
 
-fun visualizeLeader[] : Node -> lone Node {
+fun visualizeLeaderQueue[] : Node -> lone Node {
     Leader.lnxt
 }
 
@@ -91,8 +91,13 @@ fact {
 // Sent messages if broadcast finished
 fact {
     all m : SentMsg | 
+    (   
+        // m was received by some members
+        some m.rcvrs
+        and
         // Sent messages are not in anyone's outbox
         m not in Member.outbox
+    )
 }
 
 // A message can only be sent, sending or pending
@@ -112,6 +117,46 @@ fact {
     all m : Msg | lone n : Node | m in n.outbox
 }
 
+// the outbox of a node can only contain pending messages belonging
+// to that node and sending messages belonging to the current leader
+fact {
+    all n : Node |
+    (
+        all m : n.outbox |
+        (
+            // message is pending and belongs to the node
+            (m in PendingMsg and m.sndr = n) 
+            or
+            // message is sending and belongs to the leader
+            (m in SendingMsg and m.sndr in Leader)
+        )
+    )
+}
+
+// if a node has a message in its outbox that belongs to the leader 
+// then: that node is a member and it has received that message
+fact {
+    all n : Node |
+    (
+        all m : n.outbox |
+        (
+            (m in SendingMsg and m.sndr in Leader) implies
+            (
+                // the node received the message
+                n in m.rcvrs
+                and
+                // the node is a member
+                n in Member
+            )
+        )
+    )
+}
+
+// nodes cannot receive their own message
+fact {
+    no (rcvrs & sndr)
+}
+
 pred trace1 {
     #Node>=5 
     (some Leader.lnxt)
@@ -122,11 +167,5 @@ pred trace1 {
     some PendingMsg
 }
 
-pred test {
-    some m : Msg | m in Msg and #(outbox.m) > 1
-}
-
-run test
-
 // Run this trace to generate answers for Ex1.2.1 and Ex1.2.2
-run {trace1} for 7
+run {trace1} for 8

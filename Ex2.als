@@ -301,7 +301,11 @@ pred leaderApplication[m : Member] {
     broadcastStutter[]
 }
 
-pred leaderPromotion[m : Member] {
+pred leaderPrommotion {
+    some m : Member - Leader | leaderPrommotionAux[m]
+}
+
+pred leaderPrommotionAux[m : Member] {
     // Pre-Conditions
 
     // leader queue is not empty
@@ -351,7 +355,11 @@ pred broadcastInitialisation[msg : Msg] {
     SentMsg' = SentMsg
 }
 
-pred messageRedirect[msg : Msg, m : Member] {
+pred messageRedirect[msg : Msg] {
+    some m : Member | messageRedirectAux[msg, m]
+}
+
+pred messageRedirectAux[msg : Msg, m : Member] {
     // Pre-Conditions
 
     // message is in the middle of broadcast
@@ -415,11 +423,11 @@ pred trans[] {
     or
     (some m : Member | leaderApplication[m])
     or
-    (some m : Member | leaderPromotion[m])
+    (leaderPrommotion[])
     or
     (some msg : Msg | broadcastInitialisation[msg])
     or
-    (some msg : Msg, m : Member | messageRedirect[msg, m])
+    (some msg : Msg | messageRedirect[msg])
     or
     (some msg : Msg | broadcastTermination[msg])
     
@@ -433,7 +441,7 @@ pred system[] {
 
 pred trace2[] {
     #Node>=5
-    eventually (some m : Member | leaderPromotion[m])
+    eventually (leaderPrommotion[])
     eventually (some m : Member | memberPrommotion[m])
     eventually (some m : Member | memberExit[m])
     eventually (some n : Node | nonMemberExit[n])
@@ -443,11 +451,5 @@ pred trace2[] {
 fact {
     system[]
 }
-
-pred test {
-    eventually (some m : Member - Leader | some m.outbox and memberExit[m] )
-}
-
-run test for 3 but 1 Msg
 
 run {trace2[]} for 6 but 1 Msg

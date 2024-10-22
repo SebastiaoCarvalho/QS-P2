@@ -141,7 +141,7 @@ pred fairnessBecomeMember {
             )))
             implies
             (always (eventually (
-                memberApplication[n, m]
+                memberPrommotion[m]
             )))
         )
 }
@@ -184,7 +184,7 @@ pred fairnessBecomeLeader {
             )))
             implies
             (always (eventually (
-                leaderPromotion[n]
+                leaderPrommotion[]
             )))
         )
 }
@@ -223,7 +223,7 @@ pred fairnessMessageRedirect {
                 m != Leader
             )))
             implies
-            (always (eventually (messageRedirect[msg, m])))
+            (always (eventually (messageRedirect[msg])))
         )
 }
 

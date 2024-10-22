@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <alloy>
 
-<view>
+<view nodetheme="Martha">
+
+<projection> <type name="Node"/> </projection>
 
 <defaultnode/>
 
@@ -9,62 +11,38 @@
 
 <node>
    <type name="Int"/>
-   <type name="Msg"/>
    <type name="Node"/>
    <type name="String"/>
    <type name="univ"/>
    <type name="seq/Int"/>
+   <set name="this/Leader" type="Node"/>
+   <set name="this/LQueue" type="Node"/>
+   <set name="this/Member" type="Node"/>
+   <set name="$lastMemberInLeaderQueue" type="Node"/>
    <set name="$memberPrommotion_n" type="Node"/>
    <set name="$nonMemberExit_m" type="Node"/>
-   <set name="$trace1_m" type="Node"/>
-   <set name="$trace1_m&apos;" type="Node"/>
-   <set name="$trace1_m&apos;&apos;" type="Node"/>
-   <set name="$trace1_m&apos;&apos;&apos;" type="Msg"/>
-   <set name="$trace1_n" type="Node"/>
+   <set name="$trace2_m" type="Node"/>
+   <set name="$trace2_m&apos;" type="Node"/>
+   <set name="$trace2_m&apos;&apos;" type="Node"/>
+   <set name="$trace2_n" type="Node"/>
 </node>
 
-<node showlabel="no" style="inherit" color="Blue">
-   <set name="this/Member" type="Node"/>
+<node shape="Ellipse" color="Yellow" label="">
+   <type name="Msg"/>
 </node>
 
-<node showlabel="no" style="inherit" color="Green">
-   <set name="this/Leader" type="Node"/>
-</node>
-
-<node style="inherit">
-   <set name="this/LQueue" type="Node"/>
-</node>
-
-<node style="inherit" color="Black">
-   <set name="this/SentMsg" type="Msg"/>
-</node>
-
-<node style="inherit" color="Gray">
-   <set name="this/SendingMsg" type="Msg"/>
-</node>
-
-<node style="inherit" color="White">
+<node style="Bold">
    <set name="this/PendingMsg" type="Msg"/>
+   <set name="this/SendingMsg" type="Msg"/>
+   <set name="this/SentMsg" type="Msg"/>
+   <set name="outbox" type="Msg"/>
+   <set name="rcvrs" type="Msg"/>
+   <set name="sndr" type="Msg"/>
 </node>
 
-<edge style="inherit">
-   <relation name="nxt"> <type name="Node"/> <type name="Node"/> </relation>
-</edge>
-
-<edge style="inherit" visible="no">
-   <relation name="lnxt"> <type name="Node"/> <type name="Node"/> <type name="Node"/> </relation>
-   <relation name="outbox"> <type name="Node"/> <type name="Msg"/> </relation>
-   <relation name="qnxt"> <type name="Node"/> <type name="Node"/> <type name="Node"/> </relation>
-   <relation name="rcvrs"> <type name="Msg"/> <type name="Node"/> </relation>
-</edge>
-
-<edge visible="no">
-   <relation name="sndr"> <type name="Msg"/> <type name="Node"/> </relation>
-</edge>
-
-<edge visible="yes">
-   <relation name="$visualizeLeader"> <type name="Node"/> <type name="Node"/> </relation>
-</edge>
+<node style="Bold" label="m&apos;&apos;&apos;">
+   <set name="$trace2_m&apos;&apos;&apos;" type="Msg"/>
+</node>
 
 </view>
 
