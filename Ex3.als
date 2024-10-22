@@ -3,23 +3,26 @@ module Ex3
 open Ex2
 
 pred valid {
-    always (
-        // all members are reachable from each other)
-        (all m: Member | m.^nxt=Member)
-        and
-        validMemberQueue1[]
-        and
-        validMemberQueue2[]
-        and
-        // pending messages weren't received by any node
-        no PendingMsg.rcvrs
-        and
-        validSendingMsg[]
-        and 
-        validSentMsg[]
-        and
-        validMsgDisjunction[]
-    )
+    validTopology[]
+    validMessages[]
+}
+
+pred validTopology {
+    // all members are reachable from each other)
+    (all m: Member | m.^nxt=Member)
+    validMemberQueue1[]
+    validMemberQueue2[]
+}
+
+pred validMessages {
+    // pending messages weren't received by any node
+    no PendingMsg.rcvrs
+    and
+    validSendingMsg[]
+    and 
+    validSentMsg[]
+    and
+    validMsgDisjunction[]
 }
 
 pred validMemberQueue1 {
@@ -61,8 +64,11 @@ pred validLeaderQueue {
 pred validSendingMsg {
     all m : SendingMsg | 
     (
-        // m is in the outbox of a member that is not the sender
-        Leader not in m.rcvrs
+        // m was received by some members
+        some m.rcvrs
+        and
+        // m is in someone's outbox
+        m in Node.outbox
     )
 }
 
@@ -267,7 +273,7 @@ assert wrongLiveness {
 }
 
 assert validCheck {
-    valid
+    always valid
 }
 
 check validCheck for 3

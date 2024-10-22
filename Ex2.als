@@ -128,6 +128,11 @@ fun nextInLeaderQueue[m : Member] : Member {
     m.(Leader.lnxt)
 }
 
+fun lastMemberInLeaderQueue : Member {
+    // last member is in domain but not in counter domain
+    (Leader.lnxt).Member - Member.(Leader.lnxt)
+}
+
 // State transformers
 
 pred memberApplication[n : Node, m: Member] {
@@ -280,12 +285,14 @@ pred leaderApplication[m : Member] {
     m not in (Leader.lnxt).Member
 
     // Post-Conditions
+
+    // if queue was empty, crete it and make m point to Leader
     no Leader.lnxt implies lnxt' = (Leader -> m -> Leader)
-    (some Leader.lnxt implies 
-        one m1 : Member - Leader | (m1 in (Leader.lnxt).Member and m1 not in Member.(Leader.lnxt))
-        and
-        (lnxt' = lnxt + (Leader -> m -> m1)) 
-    )
+
+    // else, m points to last member in the queue
+    else lnxt' = lnxt  + (Leader -> m -> lastMemberInLeaderQueue[])
+
+    // add m to the leader queue
     LQueue' = LQueue + m
 
     // Frame Conditions
@@ -328,15 +335,20 @@ pred broadcastInitialisation[msg : Msg] {
     some Member - Leader
 
     // Post-Conditions
+
+    // remove msg from Leader's outbox and add to next node's outbox
     outbox' = outbox - (Leader -> msg) + (Leader.nxt -> msg)
+
+    // next node receives the message
+    rcvrs' = rcvrs + (msg -> Leader.nxt)
+
+    // move message from Pending to Sending
     PendingMsg' = PendingMsg - msg
     SendingMsg' = SendingMsg + msg
 
     // Frame Conditions
     topologicStutter[]
     SentMsg' = SentMsg
-    rcvrs' = rcvrs
-
 }
 
 pred messageRedirect[msg : Msg, m : Member] {
@@ -351,8 +363,13 @@ pred messageRedirect[msg : Msg, m : Member] {
     m != Leader
 
     // Post-Conditions
+
+    // remove msg from m's outbox and add to next node's outbox
     outbox' = outbox - (m -> msg) + (m.nxt -> msg)
-    rcvrs' = rcvrs + (msg -> m)
+
+    // next node receives the message if it's not the Leader (sender)
+    m.nxt != Leader implies rcvrs' = rcvrs + (msg -> m.nxt) 
+    else rcvrs' = rcvrs 
 
     // Frame Conditions
     topologicStutter[]
@@ -364,7 +381,7 @@ pred broadcastTermination[msg : Msg] {
 
     // msg is in the middle of broadcast
     msg in SendingMsg
-    // msg is back in Leader's outbox
+    // msg is back in Leader's outbox (sender)
     msg in Leader.outbox
 
     // Post-Conditions
@@ -421,7 +438,6 @@ pred trace2[] {
     eventually (some m : Member | memberExit[m])
     eventually (some n : Node | nonMemberExit[n])
     eventually (some m: Msg | broadcastTermination[m])
-    eventually always stutter
 }
 
 fact {

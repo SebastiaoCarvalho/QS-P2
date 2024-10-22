@@ -80,8 +80,8 @@ fact {
 fact {
     all m : SendingMsg | 
     (
-        // m is in the outbox of a member that is not the sender
-        m.sndr not in m.rcvrs
+        // m was received by some members
+        some m.rcvrs
         and
         // m is in someone's outbox
         m in Node.outbox
@@ -107,6 +107,11 @@ fact {
     all msg : Msg | msg in (PendingMsg + SendingMsg + SentMsg)
 }
 
+// A message can only be in one outbox at the same time
+fact {
+    all m : Msg | lone n : Node | m in n.outbox
+}
+
 pred trace1 {
     #Node>=5 
     (some Leader.lnxt)
@@ -116,6 +121,12 @@ pred trace1 {
     some SentMsg 
     some PendingMsg
 }
+
+pred test {
+    some m : Msg | m in Msg and #(outbox.m) > 1
+}
+
+run test
 
 // Run this trace to generate answers for Ex1.2.1 and Ex1.2.2
 run {trace1} for 7
