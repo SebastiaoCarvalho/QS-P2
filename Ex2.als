@@ -234,7 +234,7 @@ pred memberExit[m : Member] {
     no m.qnxt
 
     // all of m's messages have been sent
-    (sndr.m & SentMsg) = sndr.m
+    no (m.outbox)
 
     // Post-Conditions
 

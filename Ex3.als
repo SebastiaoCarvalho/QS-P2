@@ -15,14 +15,16 @@ pred validTopology {
 }
 
 pred validMessages {
-    // pending messages weren't received by any node
-    no PendingMsg.rcvrs
-    and
+    validPendingMsg[]
     validSendingMsg[]
-    and 
     validSentMsg[]
-    and
     validMsgDisjunction[]
+    // A message needs to be either pending, sending or sent
+    (all msg : Msg | msg in (PendingMsg + SendingMsg + SentMsg))
+    (all m : Msg | lone n : Node | m in n.outbox)
+    validOutbox[]
+    // nodes cannot receive their own message
+    (no (rcvrs & sndr))
 }
 
 pred validMemberQueue1 {
@@ -61,6 +63,17 @@ pred validLeaderQueue {
     all m : Member | (some m.(Leader.lnxt)) implies (Leader in m.(^(Leader.lnxt))) 
 }
 
+pred validPendingMsg {
+    all msg : PendingMsg | 
+    (
+        // message is in the sender's outbox
+        msg in msg.sndr.outbox
+        and
+        // message was not received by anyone
+        no msg.rcvrs
+    )
+}
+
 pred validSendingMsg {
     all m : SendingMsg | 
     (
@@ -74,14 +87,57 @@ pred validSendingMsg {
 
 pred validSentMsg {
     all m : SentMsg | 
-        // not in any member's outbox
+    (   
+        // m was received by some members
+        some m.rcvrs
+        and
+        // Sent messages are not in anyone's outbox
         m not in Member.outbox
+    )
 }
 
 pred validMsgDisjunction {
+    // A message can't be in two states at the same time
     no (SendingMsg & SentMsg)
     no (SendingMsg & PendingMsg)
     no (SentMsg & PendingMsg)
+}
+
+pred validOutbox {
+    (all n : Node |
+    (
+        all m : n.outbox |
+        (
+            // the outbox of a node can only contain pending messages belonging
+            // to that node and sending messages belonging to the current leader
+            (
+                // message is pending and belongs to the node
+                (m in PendingMsg and m.sndr = n) 
+                or
+                // message is sending and belongs to the leader
+                (m in SendingMsg and m.sndr in Leader)
+            )
+        )
+    ))
+    (all n : Node - Leader |
+    (
+        all m : n.outbox |
+        (
+            // if a node has a message in its outbox that belongs to the leader 
+            // then: that node is a member and it has received that message
+            (
+                (m in SendingMsg and m.sndr in Leader) implies
+                (
+                    // the node received the message
+                    n in m.rcvrs
+                    and
+                    // the node is a member
+                    n in Member
+                )
+            )
+        )
+    ))
+
 }
 
 fun visualizeMemberQueue[] : Node -> lone Node {
@@ -130,7 +186,7 @@ pred fairnessBecomeMember {
     all n, m : Node|
         (
             (eventually (always (
-                // n is a member
+                // m is a member
                 m in Member
                 and
                 // m's queue is not empty
@@ -264,16 +320,16 @@ pred allBroadcastsTerminated {
     SentMsg = Msg
 }
 
+assert validCheck {
+    always valid
+}
+
 assert liveness {
     (#Node>=2  and fairness[] and noExits[]) implies (eventually allBroadcastsTerminated[])
 }
 
 assert wrongLiveness {
     (#Node>=2  and fairness[]) implies (eventually allBroadcastsTerminated[])
-}
-
-assert validCheck {
-    always valid
 }
 
 check validCheck for 3

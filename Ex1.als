@@ -100,7 +100,7 @@ fact {
     )
 }
 
-// A message can only be sent, sending or pending
+// A message can't be in two states at the same time
 fact {
     no (SendingMsg & SentMsg)
     no (SendingMsg & PendingMsg)
@@ -136,7 +136,7 @@ fact {
 // if a node has a message in its outbox that belongs to the leader 
 // then: that node is a member and it has received that message
 fact {
-    all n : Node |
+    all n : Node - Leader |
     (
         all m : n.outbox |
         (
