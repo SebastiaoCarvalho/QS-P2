@@ -199,7 +199,11 @@ pred memberPrommotionAux[n : Node, m : Member] {
     // Post-Conditions
 
     // remove n from m's queue and 2nd node becomes first
-    m.qnxt' = m.qnxt - (n -> m) - (previousInQueue[n, m.qnxt]-> n) + (previousInQueue[n, m.qnxt] -> m)
+    (n = lastNodeInQueue[m.qnxt]) 
+        // n is the last node in the queue
+        implies (m.qnxt' = m.qnxt - (n -> m))
+        // n is in the middle
+        else (m.qnxt' = m.qnxt - (n -> m) - (previousInQueue[n, m.qnxt] -> n) + (previousInQueue[n, m.qnxt] -> m))
 
     // n becomes a member
     Member' = Member + n
@@ -265,7 +269,11 @@ pred nonMemberExitAux[n : Node, m : Member] {
     // Post-Conditions
 
     // update m's queue to have node that pointed to n point to what n pointed to
-    m.qnxt' = m.qnxt - (n -> nextInQueue[n, m.qnxt]) - (previousInQueue[n, m.qnxt] -> n) + (previousInQueue[n, m.qnxt] -> nextInQueue[n, m.qnxt])
+    (n = lastNodeInQueue[m.qnxt]) 
+        // n is the last node in the queue
+        implies (m.qnxt' = m.qnxt - (n -> nextInQueue[n, m.qnxt]))
+        // n is in the middle
+        else (m.qnxt' = m.qnxt - (n -> nextInQueue[n, m.qnxt]) - (previousInQueue[n, m.qnxt] -> n) + (previousInQueue[n, m.qnxt] -> nextInQueue[n, m.qnxt]))
 
     // Frame Conditions
     Member' = Member
@@ -287,10 +295,10 @@ pred leaderApplication[m : Member] {
     // Post-Conditions
 
     // if queue was empty, crete it and make m point to Leader
-    no Leader.lnxt implies lnxt' = (Leader -> m -> Leader)
-
+    addToEmptyLeaderQueue[m]
+    or
     // else, m points to last member in the queue
-    else lnxt' = lnxt  + (Leader -> m -> lastMemberInLeaderQueue[])
+    addToNonEmptyLeaderQueue[m]
 
     // add m to the leader queue
     LQueue' = LQueue + m
@@ -300,6 +308,31 @@ pred leaderApplication[m : Member] {
     memberStutter[]
     broadcastStutter[]
 }
+
+pred addToEmptyLeaderQueue[m : Member] {
+    // Pre-Conditions
+
+    // leader queue is empty
+    no lnxt
+
+    // Post-Conditions
+
+    // add m to the leader's queue
+    lnxt' = (Leader -> m -> Leader)
+}    
+
+pred addToNonEmptyLeaderQueue[m : Member] {
+    // Pre-Condtions
+
+    // leader queue is not empty
+    some lnxt
+
+    // Post-Conditions
+
+    // add m to the leader's queue and point to last member
+    lnxt' = lnxt  + (Leader -> m -> lastMemberInLeaderQueue[])
+}
+
 
 pred leaderPrommotion {
     some m : Member - Leader | leaderPrommotionAux[m]
@@ -452,4 +485,5 @@ fact {
     system[]
 }
 
+// run this trace to generate answers for exercise 2.2.1 and 2.2.2
 run {trace2[]} for 6 but 1 Msg
