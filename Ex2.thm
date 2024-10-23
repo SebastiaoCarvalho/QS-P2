@@ -14,14 +14,23 @@
    <type name="String"/>
    <type name="univ"/>
    <type name="seq/Int"/>
+   <set name="this/LQueue" type="Node"/>
 </node>
 
 <node color="Black">
    <set name="this/SentMsg" type="Msg"/>
 </node>
 
+<node color="Blue">
+   <set name="this/Member" type="Node"/>
+</node>
+
 <node color="Gray">
    <set name="this/SendingMsg" type="Msg"/>
+</node>
+
+<node color="Green">
+   <set name="this/Leader" type="Node"/>
 </node>
 
 <node color="White">
@@ -29,7 +38,6 @@
 </node>
 
 <node showlabel="no">
-   <set name="this/LQueue" type="Node"/>
    <set name="$lastMemberInLeaderQueue" type="Node"/>
    <set name="$leaderPrommotion_m" type="Node"/>
    <set name="$memberPrommotion_n" type="Node"/>
@@ -38,14 +46,6 @@
    <set name="$trace2_m&apos;" type="Node"/>
    <set name="$trace2_m&apos;&apos;" type="Msg"/>
    <set name="$trace2_n" type="Node"/>
-</node>
-
-<node showlabel="no" color="Blue">
-   <set name="this/Member" type="Node"/>
-</node>
-
-<node showlabel="no" color="Green">
-   <set name="this/Leader" type="Node"/>
 </node>
 
 <edge visible="no">

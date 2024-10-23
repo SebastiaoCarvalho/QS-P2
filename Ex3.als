@@ -84,11 +84,11 @@ pred validMsgDisjunction {
     no (SentMsg & PendingMsg)
 }
 
-fun visualizeQueue[] : Node -> lone Node {
+fun visualizeMemberQueue[] : Node -> lone Node {
     Member.qnxt
 }
 
-fun visualizeLeader[] : Node -> lone Node {
+fun visualizeLeaderQueue[] : Node -> lone Node {
     Leader.lnxt
 }
 
