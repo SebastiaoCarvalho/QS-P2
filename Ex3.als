@@ -333,10 +333,8 @@ assert wrongLiveness {
 }
 
 // run this check to verify exercise 3.1
-check validCheck for 10
+check validCheck
 
-// run this check to verify exercise 3.3
-check liveness for 10
+check liveness for 3 but 1 Msg
 
-// run this check to get the counter-example for exercise 3.4
-check wrongLiveness for 10
+check wrongLiveness for 3 but 1 Msg
