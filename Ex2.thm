@@ -9,28 +9,54 @@
 
 <node>
    <type name="Int"/>
+   <type name="Msg"/>
+   <type name="Node"/>
    <type name="String"/>
    <type name="univ"/>
-   <type name="Ex2/Msg"/>
-   <type name="Ex2/Node"/>
    <type name="seq/Int"/>
+   <set name="this/LQueue" type="Node"/>
 </node>
 
-<node style="inherit">
-   <set name="Ex2/Leader" type="Ex2/Node"/>
-   <set name="Ex2/LQueue" type="Ex2/Node"/>
-   <set name="Ex2/Member" type="Ex2/Node"/>
-   <set name="Ex2/PendingMsg" type="Ex2/Msg"/>
-   <set name="Ex2/SendingMsg" type="Ex2/Msg"/>
-   <set name="Ex2/SentMsg" type="Ex2/Msg"/>
+<node color="Black">
+   <set name="this/SentMsg" type="Msg"/>
 </node>
 
-<edge style="inherit">
-   <relation name="lnxt"> <type name="Ex2/Node"/> <type name="Ex2/Node"/> <type name="Ex2/Node"/> </relation>
-   <relation name="nxt"> <type name="Ex2/Node"/> <type name="Ex2/Node"/> </relation>
-   <relation name="outbox"> <type name="Ex2/Node"/> <type name="Ex2/Msg"/> </relation>
-   <relation name="qnxt"> <type name="Ex2/Node"/> <type name="Ex2/Node"/> <type name="Ex2/Node"/> </relation>
-   <relation name="rcvrs"> <type name="Ex2/Msg"/> <type name="Ex2/Node"/> </relation>
+<node color="Blue">
+   <set name="this/Member" type="Node"/>
+</node>
+
+<node color="Gray">
+   <set name="this/SendingMsg" type="Msg"/>
+</node>
+
+<node color="Green">
+   <set name="this/Leader" type="Node"/>
+</node>
+
+<node color="White">
+   <set name="this/PendingMsg" type="Msg"/>
+</node>
+
+<node showlabel="no">
+   <set name="$lastMemberInLeaderQueue" type="Node"/>
+   <set name="$leaderPrommotion_m" type="Node"/>
+   <set name="$memberPrommotion_n" type="Node"/>
+   <set name="$nonMemberExit_m" type="Node"/>
+   <set name="$trace2_m" type="Node"/>
+   <set name="$trace2_m&apos;" type="Node"/>
+   <set name="$trace2_m&apos;&apos;" type="Msg"/>
+   <set name="$trace2_n" type="Node"/>
+</node>
+
+<edge visible="no">
+   <relation name="lnxt"> <type name="Node"/> <type name="Node"/> <type name="Node"/> </relation>
+   <relation name="qnxt"> <type name="Node"/> <type name="Node"/> <type name="Node"/> </relation>
+</edge>
+
+<edge visible="no" attribute="yes">
+   <relation name="outbox"> <type name="Node"/> <type name="Msg"/> </relation>
+   <relation name="rcvrs"> <type name="Msg"/> <type name="Node"/> </relation>
+   <relation name="sndr"> <type name="Msg"/> <type name="Node"/> </relation>
 </edge>
 
 </view>
